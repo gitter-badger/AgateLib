@@ -3,12 +3,9 @@
 //
 using System;
 using System.Collections.Generic;
-using AgateLib;
-using AgateLib.DisplayLib;
-using AgateLib.Geometry;
-using AgateLib.InputLib;
+using ERY.AgateLib;
 
-namespace CreateWindowTest
+namespace ERY.CreateWindowTest
 {
     static class Program
     {
@@ -36,14 +33,14 @@ namespace CreateWindowTest
 
                 // This creates the window that we will be drawing in.
                 // 640x480 are the dimensions of the screen area that we will write to
-                DisplayWindow wind = new DisplayWindow(CreateWindowParams.Windowed(
-                    "Initialize Example", 640, 480, null, true));
+                DisplayWindow wind = new DisplayWindow("Initialize Example", 640, 480, false, true);
+
 
                 // create a random number generation object 
                 // so that we can make pretty colors.
                 Random rand = new Random();
 
-                while (wind.IsClosed == false)
+                while (wind.Closed == false)
                 {
                     // Display.BeginFrame must be called before any rendering takes place.
                     Display.BeginFrame();
@@ -89,10 +86,7 @@ namespace CreateWindowTest
                     // toggle full screen if the user pressed F5
                     if (Keyboard.Keys[KeyCode.F5])
                     {
-                        if (Display.CurrentWindow.IsFullScreen)
-                            Display.CurrentWindow.SetWindowed();
-                        else
-                            Display.CurrentWindow.SetFullScreen();
+                        Display.CurrentWindow.ToggleFullScreen();
 
                         // make that we used this keypress
                         Keyboard.Keys[KeyCode.F5] = false;
