@@ -3,9 +3,8 @@
 //
 using System;
 using System.Collections.Generic;
-using AgateLib;
-using AgateLib.DisplayLib;
-using AgateLib.Geometry;
+using ERY.AgateLib;
+using ERY.AgateLib.Geometry;
 
 namespace MultipleWindowTest
 {
@@ -16,10 +15,10 @@ namespace MultipleWindowTest
 
 
         [STAThread]
-        static void Main(string[] args)
+        static void Main()
         {
 
-            using (AgateSetup setup = new AgateSetup(args))
+            using (AgateSetup setup = new AgateSetup())
             {
                 setup.AskUser = true;
                 setup.Initialize(true, false, false);
@@ -38,9 +37,8 @@ namespace MultipleWindowTest
                 surf = new Surface(200, 150);
 
                 // this is the code that will be called when the button is pressed
-                myForm.btnDraw.Click += new EventHandler(btnDraw_Click);
-                myForm.btnClearSurface.Click += new EventHandler(btnClear_Click);
-
+                myForm.button1.Click += new EventHandler(button1_Click);
+                myForm.button2.Click += new EventHandler(button2_Click);
                 while (myForm.Visible)
                 {
                     // Render targets must be set before the call to BeginFrame,
@@ -82,7 +80,7 @@ namespace MultipleWindowTest
 
         }
 
-        static void btnClear_Click(object sender, EventArgs e)
+        static void button2_Click(object sender, EventArgs e)
         {
             Display.RenderTarget = surf;
 
@@ -91,7 +89,7 @@ namespace MultipleWindowTest
             Display.EndFrame();
         }
 
-        static void btnDraw_Click(object sender, EventArgs e)
+        static void button1_Click(object sender, EventArgs e)
         {
             Display.RenderTarget = surf;
 
@@ -108,8 +106,6 @@ namespace MultipleWindowTest
             Display.FillRect(rect, clr);
 
             Display.EndFrame();
-
-            surf.SaveTo("test.png", ImageFileFormat.Png);
 
             System.Diagnostics.Debug.Print("Wrote rectangle to {0} with color {1}.", rect, clr);
             System.Diagnostics.Debug.Flush();

@@ -4,9 +4,8 @@
 using System;
 using System.Collections.Generic;
 
-using AgateLib;
-using AgateLib.DisplayLib;
-using AgateLib.Geometry;
+using ERY.AgateLib;
+using ERY.AgateLib.Geometry;
 
 namespace TilingTest
 {
@@ -23,7 +22,7 @@ namespace TilingTest
                 setup.AskUser = true;
                 setup.Initialize(true, false, false);
 
-                if (setup.WasCanceled)
+                if (setup.Cancel)
                     return;
 
                 DisplayWindow wnd = new DisplayWindow("Tiling Test", 600, 600, false, true);
@@ -35,7 +34,7 @@ namespace TilingTest
                 tiles[0] = new Surface("tile1.png");
                 tiles[1] = new Surface("tile2.png");
 
-                while (wnd.IsClosed == false)
+                while (wnd.Closed == false)
                 {
                     Display.BeginFrame();
                     Display.Clear(Color.FromArgb(
