@@ -3,9 +3,7 @@
 //
 using System;
 using System.Collections.Generic;
-using AgateLib;
-using AgateLib.DisplayLib;
-using AgateLib.Geometry;
+using ERY.AgateLib;
 
 namespace BasicDrawingTester
 {
@@ -60,7 +58,7 @@ namespace BasicDrawingTester
 
         static List<Shape> shapes = new List<Shape>();
         static Random random = new Random();
-        static DrawingTester frm;
+        static Form1 frm;
 
         /// <summary>
         /// The main entry point for the application.
@@ -81,10 +79,10 @@ namespace BasicDrawingTester
                 // normally, the display should initialize fine, and goahead will be true.
                 // However, here we are asking the user what display mode they want to pick,
                 // and they may push the cancel button.  If they do, then exit the program.
-                if (setup.WasCanceled)
+                if (setup.Cancel)
                     return;
 
-                frm = new DrawingTester();
+                frm = new Form1();
 
                 frm.btnClear.Click += new EventHandler(btnClear_Click);
                 frm.btnDrawLine.Click += new EventHandler(btnDrawLine_Click);
@@ -97,7 +95,7 @@ namespace BasicDrawingTester
                 // 640x480 are the dimensions of the screen area that we will write to
                 DisplayWindow wind = new DisplayWindow(frm.panel1);
 
-                while (wind.IsClosed == false)
+                while (wind.Closed == false)
                 {
                     // Display.BeginFrame must be called before any rendering takes place.
                     Display.BeginFrame();
