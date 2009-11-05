@@ -18,75 +18,85 @@
 //
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 using AgateLib;
 using AgateLib.ImplementationBase;
 
-namespace AgateLib.AgateFMOD
+namespace AgateFMOD
 {
-    class FMOD_SoundBuffer : SoundBufferImpl 
-    {
-        FMOD_Audio mAudio;
-        FMOD.System mSystem;
-        FMOD.Sound mSound;
-        double mVolume = 1.0;
-        bool mIsDisposed = false;
+	class FMOD_SoundBuffer : SoundBufferImpl
+	{
+		FMOD_Audio mAudio;
+		FMOD.System mSystem;
+		FMOD.Sound mSound;
+		double mVolume = 1.0;
+		bool mIsDisposed = false;
 
-        public FMOD_SoundBuffer(FMOD_Audio audio, string filename)
-        {
-            mAudio = audio;
-            mSystem = mAudio.FMODSystem;
+		public FMOD_SoundBuffer(FMOD_Audio audio, string filename)
+		{
+			mAudio = audio;
+			mSystem = mAudio.FMODSystem;
 
-            FMOD_Audio.CheckFMODResult(mSystem.createSound(filename, FMOD.MODE.DEFAULT, ref mSound));
 
-        }
-        ~FMOD_SoundBuffer()
-        {
-            Dispose(false);
-        }
-        public override void Dispose()
-        {
-            Dispose(true); 
-        }
-        void Dispose(bool disposing)
-        {
-            if (mIsDisposed)
-                return;
+			FMOD_Audio.CheckFMODResult(mSystem.createSound(filename, FMOD.MODE.DEFAULT, ref mSound));
 
-            if (disposing)
-            {
-                GC.SuppressFinalize(this);
+		}
+		public FMOD_SoundBuffer(FMOD_Audio audio, Stream inStream)
+		{
+			byte[] bytes = new byte[inStream.Length];
 
-                mSystem = null;
-            }
-            
-            if (mAudio.IsDisposed == false)
-                mSound.release();
+			inStream.Read(bytes, 0, (int)inStream.Length);
 
-            mAudio = null;
-            mSound = null;
+		}
 
-            mIsDisposed = true;
-        }
+		~FMOD_SoundBuffer()
+		{
+			Dispose(false);
+		}
+		public override void Dispose()
+		{
+			Dispose(true);
+		}
+		void Dispose(bool disposing)
+		{
+			if (mIsDisposed)
+				return;
 
-        public FMOD.Sound FMODSound
-        {
-            get { return mSound; }
-        }
+			if (disposing)
+			{
+				GC.SuppressFinalize(this);
 
-        public override double Volume
-        {
-            get
-            {
-                return mVolume;
-            }
-            set
-            {
-                if (value < 0.0) mVolume = 0.0;
-                else if (value > 1.0) mVolume = 1.0;
-                else mVolume = value;
-            }
-        }
-    }
+				mSystem = null;
+			}
+
+			if (mAudio.IsDisposed == false)
+				mSound.release();
+
+			mAudio = null;
+			mSound = null;
+
+			mIsDisposed = true;
+		}
+
+		public FMOD.Sound FMODSound
+		{
+			get { return mSound; }
+		}
+
+		public override double Volume
+		{
+			get
+			{
+				return mVolume;
+			}
+			set
+			{
+				if (value < 0.0) mVolume = 0.0;
+				else if (value > 1.0) mVolume = 1.0;
+				else mVolume = value;
+			}
+		}
+	}
 }

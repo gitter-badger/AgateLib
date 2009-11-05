@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -23,35 +23,28 @@ using System.Text;
 using AgateLib.Drivers;
 using AgateLib.ImplementationBase;
 
-namespace AgateLib
+namespace AgateLib.Drivers
 {
-    class NullInputImpl : InputImpl 
-    {
+	class NullInputImpl : InputImpl
+	{
+		public override void Initialize()
+		{
+			Report("No input driver found.  Joysticks will not work.");
+		}
 
-        public static void Register()
-        {
-            Registrar.RegisterInputDriver(new DriverInfo<InputTypeID>(
-                typeof(NullInputImpl), InputTypeID.Silent, "Keyboard and Mouse only", -100));
-        }
+		public override void Dispose()
+		{
 
-        public override void Initialize()
-        {
-            Report("No input driver found.  Joysticks will not work.");            
-        }
+		}
 
-        public override void Dispose()
-        {
-            
-        }
+		public override int JoystickCount
+		{
+			get { return 0; }
+		}
 
-        public override int CountJoysticks()
-        {
-            return 0;
-        }
-
-        public override IEnumerable<JoystickImpl> CreateJoysticks()
-        {
-            return new List<JoystickImpl>();
-        }
-    }
+		public override IEnumerable<JoystickImpl> CreateJoysticks()
+		{
+			return new List<JoystickImpl>();
+		}
+	}
 }

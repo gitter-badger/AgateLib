@@ -1,252 +1,366 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 using AgateLib;
 using AgateLib.DisplayLib;
 using AgateLib.BitmapFont;
 using AgateLib.ImplementationBase;
 using AgateLib.Geometry;
+using AgateLib.Resources;
 
 namespace FontCreator
 {
-    class FontCreator
-    {
-        private string mText;
-        private object mRenderTarget;
-        private object mZoomRenderTarget;
-        
-        DisplayWindow wind;
-        DisplayWindow zoomWind;
-        FontSurface font;
-        Surface bgDark, bgLight;
+	public class FontBuilder
+	{
+		private string mText;
+		private object mRenderTarget;
+		private object mZoomRenderTarget;
 
-        BitmapFontOptions mOptions = new BitmapFontOptions();
+		DisplayWindow wind;
+		DisplayWindow zoomWind;
+		FontSurface font;
+		Surface bgDark, bgLight;
 
-        public FontSurface Font
-        {
-            get { return font; }
-        }
+		BitmapFontOptions mOptions = new BitmapFontOptions();
 
-        private void SetStyle(FontStyle fontStyle, bool value)
-        {
-            if (value)
-            {
-                mOptions.FontStyle = mOptions.FontStyle | fontStyle;
-            }
-            else
-            {
-                mOptions.FontStyle = mOptions.FontStyle & ~fontStyle;
-            }
+		public FontSurface Font
+		{
+			get { return font; }
+		}
 
-            CreateFont();
-        }
-        private bool StyleContains(FontStyle fontStyle)
-        {
-            return (mOptions.FontStyle & fontStyle) == fontStyle;
-        }
+		private void SetStyle(FontStyle fontStyle, bool value)
+		{
+			if (value)
+			{
+				mOptions.FontStyle = mOptions.FontStyle | fontStyle;
+			}
+			else
+			{
+				mOptions.FontStyle = mOptions.FontStyle & ~fontStyle;
+			}
 
-        public bool Underline
-        {
-            get { return StyleContains(FontStyle.Underline); }
-            set { SetStyle(FontStyle.Underline, value); }
-        }
-        public bool Strikeout
-        {
-            get { return StyleContains(FontStyle.Strikeout); }
-            set { SetStyle(FontStyle.Strikeout, value); }
-        }
-        public bool Italic
-        {
-            get { return StyleContains(FontStyle.Italic); }
-            set { SetStyle(FontStyle.Italic, value); }
-        }
-        public bool Bold
-        {
-            get { return StyleContains(FontStyle.Bold); }
-            set { SetStyle(FontStyle.Bold, value); }
-        }
+			CreateFont();
+		}
+		private bool StyleContains(FontStyle fontStyle)
+		{
+			return (mOptions.FontStyle & fontStyle) == fontStyle;
+		}
 
-        public float FontSize
-        {
-            get { return mOptions.SizeInPoints; }
-            set
-            {
-                mOptions.SizeInPoints = value;
-                CreateFont();
-            }
-        }
+		public bool Underline
+		{
+			get { return StyleContains(FontStyle.Underline); }
+			set { SetStyle(FontStyle.Underline, value); }
+		}
+		public bool Strikeout
+		{
+			get { return StyleContains(FontStyle.Strikeout); }
+			set { SetStyle(FontStyle.Strikeout, value); }
+		}
+		public bool Italic
+		{
+			get { return StyleContains(FontStyle.Italic); }
+			set { SetStyle(FontStyle.Italic, value); }
+		}
+		public bool Bold
+		{
+			get { return StyleContains(FontStyle.Bold); }
+			set { SetStyle(FontStyle.Bold, value); }
+		}
 
-        public object RenderTarget
-        {
-            get { return mRenderTarget; }
-        }
-        public string FontFamily
-        {
-            get { return mOptions.FontFamily; }
-            set
-            {
-                mOptions.FontFamily = value;
-                CreateFont();
-            }
-        }
+		public float FontSize
+		{
+			get { return mOptions.SizeInPoints; }
+			set
+			{
+				mOptions.SizeInPoints = value;
+				CreateFont();
+			}
+		}
 
-        private bool mDarkBackground;
+		public object RenderTarget
+		{
+			get { return mRenderTarget; }
+		}
+		public string FontFamily
+		{
+			get { return mOptions.FontFamily; }
+			set
+			{
+				mOptions.FontFamily = value;
+				CreateFont();
+			}
+		}
+		public int BottomMarginAdjust
+		{
+			get { return mOptions.BottomMarginAdjust; }
+			set
+			{
+				mOptions.BottomMarginAdjust = value;
+				CreateFont();
+			}
+		}
+		public int TopMarginAdjust
+		{
+			get { return mOptions.TopMarginAdjust; }
+			set
+			{
+				mOptions.TopMarginAdjust = value;
+				CreateFont();
+			}
+		}
+		private bool mDarkBackground;
 
-        private Color mColor;
+		private Color mColor;
 
-        public Color DisplayColor
-        {
-            get { return mColor; }
-            set { mColor = value; }
-        }
-        private double mDisplayScale = 4.0;
+		public Color DisplayColor
+		{
+			get { return mColor; }
+			set { mColor = value; }
+		}
+		private double mDisplayScale = 4.0;
 
-        public double DisplayScale
-        { 
-            get { return mDisplayScale; }
-            set { mDisplayScale = value; }
-        }
-	
-        public bool LightBackground
-        {
-            get { return mDarkBackground; }
-            set
-            {
-                mDarkBackground = value;
-                Draw();
-            }
-        }
-	
-        public void SetRenderTarget(object render, object zoomRender)
-        {
-            mRenderTarget = render;
-            mZoomRenderTarget = zoomRender;
+		public double DisplayScale
+		{
+			get { return mDisplayScale; }
+			set { mDisplayScale = value; }
+		}
 
-            if (wind != null)
-            {
-                wind.Dispose();
-                zoomWind.Dispose();
-                bgDark.Dispose();
-                bgLight.Dispose();
-            }
+		public bool LightBackground
+		{
+			get { return mDarkBackground; }
+			set
+			{
+				mDarkBackground = value;
+				Draw();
+			}
+		}
 
-            zoomWind = new DisplayWindow(zoomRender);
-            wind = new DisplayWindow(render);
-            //wind = new DisplayWindow(render);
-            //zoomWind = new DisplayWindow(zoomRender);
+		public void SetRenderTarget(object render, object zoomRender)
+		{
+			mRenderTarget = render;
+			mZoomRenderTarget = zoomRender;
 
-            bgDark = new Surface("bgdark.png");
+			if (wind != null)
+			{
+				wind.Dispose();
+				zoomWind.Dispose();
+				bgDark.Dispose();
+				bgLight.Dispose();
+			}
+
+			zoomWind = DisplayWindow.CreateFromControl(zoomRender);
+			wind = DisplayWindow.CreateFromControl(render);
+			//wind = new DisplayWindow(render);
+			//zoomWind = new DisplayWindow(zoomRender);
+
+			bgDark = new Surface("bgdark.png");
 			bgLight = new Surface("bglight.png");
 
-            DisplayColor = Color.White;
-        }
+			DisplayColor = Color.White;
+		}
 
-        public void CreateFont()
-        {
-            if (string.IsNullOrEmpty(FontFamily))
-                return;
-            if (font != null)
-                font.Dispose();
+		public void CreateFont()
+		{
+			if (string.IsNullOrEmpty(FontFamily))
+				return;
+			if (font != null)
+				font.Dispose();
 
-            font = new FontSurface(mOptions);
+			font = new FontSurface(mOptions);
 
-            Draw();
-        }
+			Draw();
+		}
 
-        FontStyle Style
-        {
-            get
-            {
-                return
-                    (Bold ? FontStyle.Bold : 0) |
-                    (Italic ? FontStyle.Italic : 0) |
-                    (Underline ? FontStyle.Underline : 0) |
-                    (Strikeout ? FontStyle.Strikeout : 0);
-            }
-        }
-        public BitmapFontOptions Options
-        {
-            get { return mOptions; }
-        }
+		FontStyle Style
+		{
+			get
+			{
+				return
+					(Bold ? FontStyle.Bold : 0) |
+					(Italic ? FontStyle.Italic : 0) |
+					(Underline ? FontStyle.Underline : 0) |
+					(Strikeout ? FontStyle.Strikeout : 0);
+			}
+		}
+		public BitmapFontOptions Options
+		{
+			get { return mOptions; }
+		}
 
-        public string Text
-        {
-            get { return mText; }
-            set
-            {
-                mText = value;
-                Draw();
-            }
-        }
+		public string Text
+		{
+			get { return mText; }
+			set
+			{
+				mText = value;
+				Draw();
+			}
+		}
 
-        public FontCreator()
-        {
-            StringBuilder b = new StringBuilder();
-            
-            b.AppendLine("Sample Text");
-            b.AppendLine("abcdefghijklm   ABCDEFGHIJKLM");
-            b.AppendLine("nopqrstuvwxyz   NOPQRSTUVWXYZ");
-            b.AppendLine("01234567890");
-            b.AppendLine("!@#$%^&*(),<.>/?;:'\"-_=+\\|");
+		public FontBuilder()
+		{
+			StringBuilder b = new StringBuilder();
 
-            mText = b.ToString();
+			b.AppendLine("Sample Text");
+			b.AppendLine("abcdefghijklm   ABCDEFGHIJKLM");
+			b.AppendLine("nopqrstuvwxyz   NOPQRSTUVWXYZ");
+			b.AppendLine("01234567890");
+			b.AppendLine("!@#$%^&*(),<.>/?;:'\"-_=+\\|");
 
-            mOptions.UseTextRenderer = true;
-        }
+			mText = b.ToString();
 
-        public void Draw()
-        {
-            if (zoomWind == null)
-                return;
+			mOptions.UseTextRenderer = true;
+		}
 
-            Display.RenderTarget = zoomWind;
-            Display.BeginFrame();
-            Display.Clear();
+		public void Draw()
+		{
+			if (zoomWind == null)
+				return;
 
-            font.SetScale(mDisplayScale, mDisplayScale);
+			Display.RenderTarget = zoomWind;
+			Display.BeginFrame();
+			Display.Clear();
 
-            DrawBackground();
-            DrawText();
+			font.SetScale(mDisplayScale, mDisplayScale);
+			((BitmapFontImpl)font.Impl).Surface.InterpolationHint = InterpolationMode.Fastest;
 
-            Display.EndFrame();
+			DrawBackground();
+			DrawText();
 
-
-            Display.RenderTarget = wind;
-            Display.BeginFrame();
-            Display.Clear();
-
-            font.SetScale(1.0, 1.0);
-
-            DrawBackground();
-            DrawText();
-
-            Display.EndFrame();
+			Display.EndFrame();
 
 
-            Core.KeepAlive();
-        }
+			Display.RenderTarget = wind;
+			Display.BeginFrame();
+			Display.Clear();
 
-        private void DrawBackground()
-        {
-            Surface background = LightBackground ? bgLight : bgDark;
+			font.SetScale(1.0, 1.0);
+			((BitmapFontImpl)font.Impl).Surface.InterpolationHint = InterpolationMode.Nicest;
 
-            for (int x = 0; x < Display.RenderTarget.Width; x += background.DisplayWidth)
-            {
-                for (int y = 0; y < Display.RenderTarget.Height; y += background.DisplayHeight)
-                {
-                    background.Draw(x, y);
-                }
-            }
-        }
+			DrawBackground();
+			DrawText();
 
-        private void DrawText()
-        {
-            if (font == null)
-                return;
+			Display.EndFrame();
 
-            font.Color = DisplayColor;
-            font.DrawText(Text);
-        }
-    }
+
+			Core.KeepAlive();
+		}
+
+		private void DrawBackground()
+		{
+			Surface background = LightBackground ? bgLight : bgDark;
+
+			for (int x = 0; x < Display.RenderTarget.Width; x += background.DisplayWidth)
+			{
+				for (int y = 0; y < Display.RenderTarget.Height; y += background.DisplayHeight)
+				{
+					background.Draw(x, y);
+				}
+			}
+		}
+
+		private void DrawText()
+		{
+			if (font == null)
+				return;
+
+			font.Color = DisplayColor;
+			font.DrawText(Text);
+		}
+
+		internal bool SaveFont(string resourceFile, string fontName, string imageFile)
+		{
+			AgateResourceCollection resources;
+
+			if (File.Exists(resourceFile))
+				resources = AgateResourceLoader.LoadResources(resourceFile);
+			else
+				resources = new AgateResourceCollection();
+
+			if (Path.IsPathRooted(resourceFile) == false)
+			{
+				resourceFile = Path.Combine(Directory.GetCurrentDirectory(), resourceFile);
+			}
+
+			string localImagePath;
+			string dir = Path.GetDirectoryName(resourceFile);
+
+			if (Path.IsPathRooted(imageFile) == false)
+			{
+				localImagePath = imageFile;
+				imageFile = Path.Combine(Path.GetDirectoryName(resourceFile), imageFile);
+			}
+			else
+				localImagePath = GetRelativePath(dir, imageFile);
+
+			SaveImage(imageFile);
+
+			localImagePath = localImagePath.Replace(Path.DirectorySeparatorChar.ToString(), "/");
+
+			BitmapFontResource res = new BitmapFontResource(fontName);
+			res.Image = localImagePath;
+			res.FontMetrics = ((BitmapFontImpl)Font.Impl).FontMetrics.Clone();
+
+			if (resources.Contains(res.Name))
+			{
+				if (System.Windows.Forms.MessageBox.Show(
+					"The specified resource file already contains a resource named \""
+					+ res.Name + "\"." + Environment.NewLine
+					+ "Would you like to overwrite it?", res.Name + " already exists",
+					System.Windows.Forms.MessageBoxButtons.YesNo,
+					System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+				{
+					resources.Remove(res.Name);
+				}
+				else
+				{
+					return false;
+				}
+			}
+			resources.Add(res);
+
+			AgateResourceLoader.SaveResources(resources, resourceFile);
+
+			return true;
+		}
+
+		private void SaveImage(string imageFile)
+		{
+			EnsureDirectoryExists(Path.GetDirectoryName(imageFile));
+
+			((BitmapFontImpl)Font.Impl).Surface.SaveTo(imageFile);
+		}
+
+		private void EnsureDirectoryExists(string dirname)
+		{
+			if (Directory.Exists(dirname))
+				return;
+
+			string parentDir = Path.GetDirectoryName(dirname);
+
+			if (Directory.Exists(parentDir) == false)
+				EnsureDirectoryExists(parentDir);
+
+			Directory.CreateDirectory(dirname);
+		}
+
+		private string GetRelativePath(string dir, string imageFile)
+		{
+			if (dir.EndsWith(Path.DirectorySeparatorChar.ToString()) == false)
+				dir += Path.DirectorySeparatorChar;
+
+			for (int i = 0; i < dir.Length; i++)
+			{
+				if (imageFile.StartsWith(dir.Substring(0, i)) == false)
+				{
+					return imageFile.Substring(i - 1);
+				}
+			}
+
+
+			return imageFile.Substring(dir.Length);
+		}
+	}
 }

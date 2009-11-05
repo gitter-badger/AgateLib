@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -24,402 +24,354 @@ using System.Xml;
 using AgateLib.DisplayLib;
 using AgateLib.Geometry;
 using AgateLib.ImplementationBase;
+using AgateLib.Resources;
+using AgateLib.DisplayLib.Cache;
 
 namespace AgateLib.BitmapFont
 {
-    /// <summary>
-    /// Provides a basic implementation for the use of non-system fonts provided
-    /// as a bitmap.
-    /// 
-    /// To construct a bitmap font, call the appropriate static FontSurface method.
-    /// </summary>
-    public class BitmapFontImpl : FontSurfaceImpl
-    {
-        Surface mSurface;
-
-        FontMetrics mFontMetrics;
-
-        int mCharHeight;
-        double mAverageCharWidth;
-
-        /// <summary>
-        /// Constructs a BitmapFontImpl, assuming the characters in the given file
-        /// are all the same size, and are in their ASCII order.
-        /// </summary>
-        /// <param name="filename"></param>
-        /// <param name="characterSize"></param>
-        public BitmapFontImpl(string filename, Size characterSize)
-        {
-            mFontMetrics = new FontMetrics();
-
-            mSurface = new Surface(filename);
-            mCharHeight = characterSize.Height;
-
-            ExtractMonoSpaceAsciiFont(characterSize);
-        }
-
-        /// <summary>
-        /// Constructs a BitmapFontImpl, taking the passed surface as the source for
-        /// the characters.  The source rectangles for each character are passed in.
-        /// </summary>
-        /// <param name="surface">Surface which contains the image data for the font glyphs.</param>
-        /// <param name="fontMetrics">FontMetrics structure which describes how characters
-        /// are laid out.</param>
-        public BitmapFontImpl(Surface surface, FontMetrics fontMetrics)
-        {
-            mFontMetrics = fontMetrics.Clone();
-            float maxHeight = 0;
-
-            foreach (KeyValuePair<char, GlyphMetrics> kvp in mFontMetrics)
-            {
-                if (kvp.Value.SourceRect.Height > maxHeight)
-                    maxHeight = kvp.Value.SourceRect.Height;
-            }
-
-            mCharHeight = (int)Math.Ceiling(maxHeight);
-            mSurface = surface;
-        }
-
-        /// <summary>
-        /// Disposes of the object.
-        /// </summary>
-        public override void Dispose()
-        {
-            mSurface.Dispose();
-        }
-
-        private void ExtractMonoSpaceAsciiFont(Size characterSize)
-        {
-            int x = 0;
-            int y = 0;
-            char val = '\0';
-
-            while (y + characterSize.Height <= mSurface.SurfaceHeight)
-            {
-                Rectangle src = new Rectangle(x, y, characterSize.Width, characterSize.Height);
-
-                mFontMetrics[val] = new GlyphMetrics(src);
-
-                val++;
-                x += characterSize.Width;
-
-                if (x + characterSize.Width > mSurface.SurfaceWidth)
-                {
-                    y += characterSize.Height;
-                    x = 0;
-                }
-            }
-
-            CalcAverageCharWidth();
-        }
-
-        /// <summary>
-        /// Saves the bitmap font to two files, an image file which contains the
-        /// binary image data, and an XML file which contains all the glyph definitions.
-        /// The image filename is the same as the XML filename, with a ".png" file extension.
-        /// </summary>
-        /// <param name="xmlFileName"></param>
-        public void Save(string xmlFileName)
-        {
-            string filename = System.IO.Path.Combine(
-                System.IO.Path.GetDirectoryName(xmlFileName),
-                System.IO.Path.GetFileNameWithoutExtension(xmlFileName) + ".png");
-
-            Save(filename, xmlFileName);
-        }
-        /// <summary>
-        /// Saves the bitmap font to two files, an image file which contains the
-        /// binary image data, and an XML file which contains all the glyph definitions.
-        /// </summary>
-        /// <param name="imageFilename"></param>
-        /// <param name="xmlFileName"></param>
-        public void Save(string imageFilename, string xmlFileName)
-        {
-            XmlDocument doc = new XmlDocument();
-
-            SaveImage(imageFilename);
-            mFontMetrics.Save(doc, doc);
-
-            doc.Save(xmlFileName);
-        }
-        void SaveImage(string imageFilename)
-        {
-            mSurface.SaveTo(imageFilename);
-        }
-
-        /// <summary>
-        /// Creates a bitmap font by loading an OS font, and drawing it to 
-        /// a bitmap to use as a Surface object.  You should only use this method
-        /// if writing a driver.
-        /// </summary>
-        /// <seealso cref="FontSurface.BitmapFont(string, float, FontStyle)"/>
-        /// <param name="fontFamily"></param>
-        /// <param name="sizeInPoints"></param>
-        /// <param name="style"></param>
-        /// <returns></returns>
-        [Obsolete("Use AgateWinForms.dll::BitmapFontUtil.FromOSFont instead.", true)]
-        public static FontSurfaceImpl FromOSFont(string fontFamily, float sizeInPoints, FontStyle style)
-        {
-            throw new InvalidOperationException("BitmapFontImpl.FromOSFont is no longer valid.  The implementation has been moved to AgateWinForms.dll.");
-        }
-
-        private void CalcAverageCharWidth()
-        {
-            double total = 0;
-            int count = 0;
-
-            foreach (GlyphMetrics glyph in mFontMetrics.Values)
-            {
-                total += glyph.SourceRect.Width;
-                count++;
-            }
-
-            mAverageCharWidth = total / (double)count;
-        }
-
-        /// <summary>
-        /// Overrides the base Color method to catch color changes to set them on the surface.
-        /// </summary>
-        public override Color Color
-        {
-            get
-            {
-                return base.Color;
-            }
-            set
-            {
-                base.Color = value;
-
-                mSurface.Color = value;
-            }
-        }
-        /// <summary>
-        /// Measures the width of the text.
-        /// </summary>
-        /// <param name="text"></param>
-        /// <returns></returns>
-        public override int StringDisplayWidth(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return 0;
-
-            double highestLineWidth = 0;
-
-            string[] lines = text.Split('\n');
-
-            for (int i = 0; i < lines.Length; i++)
-            {
-                string line = lines[i].TrimEnd();
-                double lineWidth = 0;
-
-                for (int j = 0; j < line.Length; j++)
-                {
-                    lineWidth += mFontMetrics[line[j]].Width;
-                }
-
-                if (lineWidth > highestLineWidth)
-                    highestLineWidth = lineWidth;
-
-            }
-
-            return (int)Math.Ceiling(highestLineWidth * ScaleWidth);
-        }
-        /// <summary>
-        /// Measures the height of the text
-        /// </summary>
-        /// <param name="text"></param>
-        /// <returns></returns>
-        public override int StringDisplayHeight(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return 0;
-
-            int CRcount = 0;
-            int i = 0;
-
-            do
-            {
-                i = text.IndexOf('\n', i + 1);
-
-                if (i == -1)
-                    break;
-
-                CRcount++;
-
-            } while (i != -1);
-
-            if (text[text.Length - 1] == '\n')
-                CRcount--;
-
-            return (int)(mCharHeight * (CRcount + 1) * ScaleHeight);
-        }
-        /// <summary>
-        /// Measures the size of the text.
-        /// </summary>
-        /// <param name="text"></param>
-        /// <returns></returns>
-        public override Size StringDisplaySize(string text)
-        {
-            return new Size(StringDisplayWidth(text), StringDisplayHeight(text));
-        }
-
-        private void GetRects(string text, RectangleF[] srcRects, RectangleF[] destRects, out int rectCount)
-        {
-            double destX = 0;
-            double destY = 0;
-            int height = mCharHeight;
-
-            rectCount = 0;
-
-            for (int i = 0; i < text.Length; i++)
-            {
-                switch (text[i])
-                {
-                    case '\r':
-                        // ignore '\r' characters that are followed by '\n', because
-                        // the line break on Windows is these two characters in succession.
-                        if (i + 1 < text.Length && text[i + 1] == '\n')
-                        {
-                            break;
-                        }
-
-                        // this '\r' is not followed by a '\n', so treat it like any other character.
-                        goto default;
-
-                    case '\n':
-                        destX = 0;
-                        destY += height * this.ScaleHeight;
-                        break;
-
-                    default:
-                        GlyphMetrics glyph = mFontMetrics[text[i]];
-
-                        destX = Math.Max(0, destX - glyph.LeftOverhang * ScaleWidth);
-
-                        srcRects[rectCount] = new RectangleF(
-                            glyph.SourceRect.X, glyph.SourceRect.Y,
-                            glyph.SourceRect.Width, glyph.SourceRect.Height);
-
-                        destRects[rectCount] = new RectangleF((float)destX, (float)destY,
-                            (float)(srcRects[rectCount].Width * ScaleWidth),
-                            (float)(srcRects[rectCount].Height * ScaleHeight));
-
-                        destX += destRects[rectCount].Width - glyph.RightOverhang * ScaleWidth;
-
-                        rectCount++;
-                        break;
-                }
-            }
-        }
-
-        RectangleF[] cacheSrcRects;
-        RectangleF[] cacheDestRects;
-
-        /// <summary>
-        /// Draws the text to the screen.
-        /// </summary>
-        /// <param name="destX"></param>
-        /// <param name="destY"></param>
-        /// <param name="text"></param>
-        public override void DrawText(int destX, int destY, string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return;
-
-            if (cacheSrcRects == null || text.Length > cacheSrcRects.Length)
-            {
-                cacheSrcRects = new RectangleF[text.Length];
-                cacheDestRects = new RectangleF[text.Length];
-            }
-
-            RectangleF[] srcRects = cacheSrcRects;
-            RectangleF[] destRects = cacheDestRects;
-
-            DrawTextImpl(destX, destY, text, srcRects, destRects);
-        }
-
-        private void DrawTextImpl(int destX, int destY, string text, 
-            RectangleF[] srcRects, RectangleF[] destRects)
-        {
-            // this variable counts the number of rectangles actually used to display text.
-            // It may be less then text.Length because carriage return characters 
-            // don't need any rects.
-            int displayTextLength;
-            GetRects(text, srcRects, destRects, out displayTextLength);
-
-            if (DisplayAlignment != OriginAlignment.TopLeft)
-            {
-                Point value = Origin.Calc(DisplayAlignment, StringDisplaySize(text));
-
-                destX -= value.X;
-                destY -= value.Y;
-            }
-
-            for (int i = 0; i < displayTextLength; i++)
-            {
-                destRects[i].X += destX;
-                destRects[i].Y += destY;
-            }
-
-            mSurface.DrawRects(srcRects, destRects, 0, displayTextLength);
-        }
-
-        /// <summary>
-        /// Draws the text to the screen.
-        /// </summary>
-        /// <param name="destX"></param>
-        /// <param name="destY"></param>
-        /// <param name="text"></param>
-        public override void DrawText(double destX, double destY, string text)
-        {
-            DrawText((int)destX, (int)destY, text);
-        }
-
-        /// <summary>
-        /// Draws the text to the screen.
-        /// </summary>
-        /// <param name="destPt"></param>
-        /// <param name="text"></param>
-        public override void DrawText(Point destPt, string text)
-        {
-            DrawText(destPt.X, destPt.Y, text);
-        }
-
-        /// <summary>
-        /// Draws the text to the screen.
-        /// </summary>
-        /// <param name="destPt"></param>
-        /// <param name="text"></param>
-        public override void DrawText(PointF destPt, string text)
-        {
-            DrawText(destPt.X, destPt.Y, text);
-        }
-        
-    }
-
-    /// <summary>
-    /// Enum which indicates how pixels along glyph edges are processed.
-    /// </summary>
-    public enum BitmapFontEdgeOptions
-    {
-        /// <summary>
-        /// Calculates the intensity of the pixel, and sets the pixel to white
-        /// with an alpha value equal to its intensity.
-        /// </summary>
-        IntensityAlphaWhite,
-
-        /// <summary>
-        /// Preserves the color of the pixel, and sets the alpha to the intensity of
-        /// the pixel.
-        /// </summary>
-        IntensityAlphaColor,
-
-        /// <summary>
-        /// Performs no processing on edges and leaves them as is.
-        /// Note that this will result in edges which are not at all transparent.
-        /// </summary>
-        None,
-    }
+	/// <summary>
+	/// Provides a basic implementation for the use of non-system fonts provided
+	/// as a bitmap.
+	/// 
+	/// To construct a bitmap font, call the appropriate static FontSurface method.
+	/// </summary>
+	public class BitmapFontImpl : FontSurfaceImpl
+	{
+		Surface mSurface;
+		FontMetrics mFontMetrics;
+
+		int mCharHeight;
+		double mAverageCharWidth;
+
+		#region --- Cache Class ---
+
+		class BitmapFontCache : FontStateCache
+		{
+			public bool NeedsRefresh = true;
+			public RectangleF[] SrcRects;
+			public RectangleF[] DestRects;
+			public int DisplayTextLength;
+
+			protected internal override FontStateCache Clone()
+			{
+				BitmapFontCache cache = new BitmapFontCache();
+
+				cache.SrcRects = (RectangleF[])SrcRects.Clone();
+				cache.DestRects = (RectangleF[])DestRects.Clone();
+
+				return cache;
+			}
+
+			protected internal override void OnTextChanged(FontState fontState)
+			{
+				NeedsRefresh = true;
+			}
+			protected internal override void OnDisplayAlignmentChanged(FontState fontState)
+			{
+				NeedsRefresh = true;
+			}
+			protected internal override void OnLocationChanged(FontState fontState)
+			{
+				NeedsRefresh = true;
+			}
+		}
+
+		#endregion
+
+		/// <summary>
+		/// Constructs a BitmapFontImpl, assuming the characters in the given file
+		/// are all the same size, and are in their ASCII order.
+		/// </summary>
+		/// <param name="filename"></param>
+		/// <param name="characterSize"></param>
+		public BitmapFontImpl(string filename, Size characterSize)
+		{
+			mFontMetrics = new FontMetrics();
+
+			mSurface = new Surface(filename);
+			mCharHeight = characterSize.Height;
+
+			ExtractMonoSpaceAsciiFont(characterSize);
+		}
+
+		/// <summary>
+		/// Constructs a BitmapFontImpl, taking the passed surface as the source for
+		/// the characters.  The source rectangles for each character are passed in.
+		/// </summary>
+		/// <param name="surface">Surface which contains the image data for the font glyphs.</param>
+		/// <param name="fontMetrics">FontMetrics structure which describes how characters
+		/// are laid out.</param>
+		public BitmapFontImpl(Surface surface, FontMetrics fontMetrics)
+		{
+			mFontMetrics = (FontMetrics)((ICloneable)fontMetrics).Clone();
+			float maxHeight = 0;
+
+			foreach (KeyValuePair<char, GlyphMetrics> kvp in mFontMetrics)
+			{
+				if (kvp.Value.SourceRect.Height > maxHeight)
+					maxHeight = kvp.Value.SourceRect.Height;
+			}
+
+			mCharHeight = (int)Math.Ceiling(maxHeight);
+			mSurface = surface;
+		}
+
+		/// <summary>
+		/// Disposes of the object.
+		/// </summary>
+		public override void Dispose()
+		{
+			mSurface.Dispose();
+		}
+		/// <summary>
+		/// Gets the font metric information.
+		/// </summary>
+		/// <returns></returns>
+		public FontMetrics FontMetrics
+		{
+			get { return mFontMetrics; }
+		}
+		/// <summary>
+		/// Gets the surface containing the glyphs.
+		/// </summary>
+		/// <returns></returns>
+		public Surface Surface
+		{
+			get { return mSurface; }
+		}
+
+		private void ExtractMonoSpaceAsciiFont(Size characterSize)
+		{
+			int x = 0;
+			int y = 0;
+			char val = '\0';
+
+			while (y + characterSize.Height <= mSurface.SurfaceHeight)
+			{
+				Rectangle src = new Rectangle(x, y, characterSize.Width, characterSize.Height);
+
+				mFontMetrics[val] = new GlyphMetrics(src);
+
+				val++;
+				x += characterSize.Width;
+
+				if (x + characterSize.Width > mSurface.SurfaceWidth)
+				{
+					y += characterSize.Height;
+					x = 0;
+				}
+			}
+
+			CalcAverageCharWidth();
+		}
+
+		private void CalcAverageCharWidth()
+		{
+			double total = 0;
+			int count = 0;
+
+			foreach (GlyphMetrics glyph in mFontMetrics.Values)
+			{
+				total += glyph.SourceRect.Width;
+				count++;
+			}
+
+			mAverageCharWidth = total / (double)count;
+		}
+
+		public override Size StringDisplaySize(FontState state, string text)
+		{
+			if (string.IsNullOrEmpty(text))
+				return Size.Empty;
+
+			int CRcount = 0;
+			int i = 0;
+			double highestLineWidth = 0;
+
+			// measure width
+			string[] lines = text.Split('\n');
+			for (i = 0; i < lines.Length; i++)
+			{
+				string line = lines[i];
+				double lineWidth = 0;
+
+				for (int j = 0; j < line.Length; j++)
+				{
+					lineWidth += mFontMetrics[line[j]].Width;
+				}
+
+				if (lineWidth > highestLineWidth)
+					highestLineWidth = lineWidth;
+			}
+
+			// measure height
+			i = 0;
+			do
+			{
+				i = text.IndexOf('\n', i + 1);
+
+				if (i == -1)
+					break;
+
+				CRcount++;
+
+			} while (i != -1);
+
+			if (text[text.Length - 1] == '\n')
+				CRcount--;
+
+			return new Size((int)Math.Ceiling(highestLineWidth * state.ScaleWidth),
+				(int)(mCharHeight * (CRcount + 1) * state.ScaleHeight));
+		}
+
+		/// <summary>
+		/// Returns the height of characters in the font.
+		/// </summary>
+		public override int FontHeight
+		{
+			get { return mCharHeight; }
+		}
+
+		private void GetRects(RectangleF[] srcRects, RectangleF[] destRects, out int rectCount,
+			string text, double ScaleHeight, double ScaleWidth)
+		{
+			double destX = 0;
+			double destY = 0;
+			int height = mCharHeight;
+
+			rectCount = 0;
+
+			for (int i = 0; i < text.Length; i++)
+			{
+				switch (text[i])
+				{
+					case '\r':
+						// ignore '\r' characters that are followed by '\n', because
+						// the line break on Windows is these two characters in succession.
+						if (i + 1 < text.Length && text[i + 1] == '\n')
+						{
+							break;
+						}
+
+						// this '\r' is not followed by a '\n', so treat it like any other character.
+						goto default;
+
+					case '\n':
+						destX = 0;
+						destY += height * ScaleHeight;
+						break;
+
+					default:
+						GlyphMetrics glyph = mFontMetrics[text[i]];
+
+						destX = Math.Max(0, destX - glyph.LeftOverhang * ScaleWidth);
+
+						srcRects[rectCount] = new RectangleF(
+							glyph.SourceRect.X, glyph.SourceRect.Y,
+							glyph.SourceRect.Width, glyph.SourceRect.Height);
+
+						destRects[rectCount] = new RectangleF((float)destX, (float)destY,
+							(float)(srcRects[rectCount].Width * ScaleWidth),
+							(float)(srcRects[rectCount].Height * ScaleHeight));
+
+						destX += destRects[rectCount].Width - glyph.RightOverhang * ScaleWidth;
+
+						rectCount++;
+						break;
+				}
+			}
+		}
+
+		private static BitmapFontCache GetCache(FontState state)
+		{
+			BitmapFontCache cache = state.Cache as BitmapFontCache;
+
+			if (cache == null)
+			{
+				cache = new BitmapFontCache();
+				state.Cache = cache;
+			}
+
+			if (cache.SrcRects == null ||
+				cache.SrcRects.Length < state.Text.Length)
+			{
+				cache.SrcRects = new RectangleF[state.Text.Length];
+				cache.DestRects = new RectangleF[state.Text.Length];
+			}
+
+			return cache;
+		}
+
+		/// <summary>
+		/// Draws the text to the screen.
+		/// </summary>
+		/// <param name="state"></param>
+		public override void DrawText(FontState state)
+		{
+			BitmapFontCache cache = GetCache(state);
+
+			RefreshCache(state, cache);
+
+			mSurface.Color = state.Color;
+			mSurface.DrawRects(cache.SrcRects, cache.DestRects, 0, cache.DisplayTextLength);
+		}
+
+		private void RefreshCache(FontState state, BitmapFontCache cache)
+		{
+
+			if (cache.NeedsRefresh)
+			{
+				// this variable counts the number of rectangles actually used to display text.
+				// It may be less then text.Length because carriage return characters 
+				// don't need any rects.
+				GetRects(cache.SrcRects, cache.DestRects, out cache.DisplayTextLength,
+					state.TransformedText, state.ScaleHeight, state.ScaleWidth);
+
+				PointF dest = state.Location;
+
+				if (state.DisplayAlignment != OriginAlignment.TopLeft)
+				{
+					Point value = Origin.Calc(state.DisplayAlignment,
+						StringDisplaySize(state, state.Text));
+
+					dest.X -= value.X;
+					dest.Y -= value.Y;
+				}
+
+				for (int i = 0; i < cache.DisplayTextLength; i++)
+				{
+					cache.DestRects[i].X += dest.X;
+					cache.DestRects[i].Y += dest.Y;
+				}
+
+				cache.NeedsRefresh = false;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Enum which indicates how pixels along glyph edges are processed.
+	/// </summary>
+	public enum BitmapFontEdgeOptions
+	{
+		/// <summary>
+		/// Calculates the intensity of the pixel, and sets the pixel to white
+		/// with an alpha value equal to its intensity.
+		/// </summary>
+		IntensityAlphaWhite,
+
+		/// <summary>
+		/// Preserves the color of the pixel, and sets the alpha to the intensity of
+		/// the pixel.
+		/// </summary>
+		IntensityAlphaColor,
+
+		/// <summary>
+		/// Performs no processing on edges and leaves them as is.
+		/// Note that this will result in edges which are not at all transparent.
+		/// </summary>
+		None,
+	}
 
 
 }

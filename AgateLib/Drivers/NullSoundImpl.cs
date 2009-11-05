@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -23,229 +23,141 @@ using System.Text;
 using AgateLib.Drivers;
 using AgateLib.ImplementationBase;
 
-namespace AgateLib
+namespace AgateLib.Drivers
 {
-    /// <summary>
-    /// Class which provides a silent Audio implementation.
-    /// </summary>
-    class NullSoundImpl : AudioImpl 
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public class NullSoundBufferImpl : SoundBufferImpl
-        {
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Dispose()
-            {
-                
-            }
-            /// <summary>
-            /// 
-            /// </summary>
-            public override double Volume
-            {
-                get
-                {
-                    return 0;
-                }
-                set
-                {
-                    
-                }
-            }
+	class NullSoundImpl : AudioImpl
+	{
+		class NullSoundBufferImpl : SoundBufferImpl
+		{
+			public override void Dispose()
+			{
 
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        public class NullSoundBufferSessionImpl : SoundBufferSessionImpl
-        {
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Dispose()
-            {
-                
-            }
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Play()
-            {
-                
-            }
+			}
+			public override double Volume
+			{
+				get
+				{
+					return 0;
+				}
+				set
+				{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Stop()
-            {
-                
-            }
+				}
+			}
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override double Volume
-            {
-                get
-                {
-                    return 0;
-                }
-                set
-                {
-                    
-                }
-            }
+		}
+		public class NullSoundBufferSessionImpl : SoundBufferSessionImpl
+		{
+			public override void Dispose()
+			{
+			}
+			public override void Play()
+			{
+			}
+			public override void Stop()
+			{
+			}
+			public override double Volume
+			{
+				get
+				{
+					return 0;
+				}
+				set
+				{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override double Pan
-            {
-                get
-                {
-                    return 0;
-                }
-                set
-                {
-                    
-                }
-            }
+				}
+			}
+			public override double Pan
+			{
+				get
+				{
+					return 0;
+				}
+				set
+				{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override bool IsPlaying
-            {
-                get { return false; }
-            }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        public class NullMusicImpl : MusicImpl
-        {
+				}
+			}
+			public override bool IsPlaying
+			{
+				get { return false; }
+			}
+		}
+		public class NullMusicImpl : MusicImpl
+		{
+			protected override void OnSetLoop(bool value)
+			{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            protected override void OnSetLoop(bool value)
-            {
-                
-            }
+			}
+			public override void Dispose()
+			{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Dispose()
-            {
-                
-            }
+			}
+			public override void Play()
+			{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Play()
-            {
-                
-            }
+			}
+			public override void Stop()
+			{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override void Stop()
-            {
-                
-            }
+			}
+			public override double Volume
+			{
+				get
+				{
+					return 0;
+				}
+				set
+				{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override double Volume
-            {
-                get
-                {
-                    return 0;
-                }
-                set
-                {
-                    
-                }
-            }
+				}
+			}
+			public override double Pan
+			{
+				get
+				{
+					return 0;
+				}
+				set
+				{
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override double Pan
-            {
-                get
-                {
-                    return 0;
-                }
-                set
-                {
-                    
-                }
-            }
+				}
+			}
+			public override bool IsPlaying
+			{
+				get { return false; }
+			}
+		}
+		public override void Initialize()
+		{
+			Report("No audio driver found.  Audio will not be heard.");
+		}
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public override bool IsPlaying
-            {
-                get { return false; }
-            }
-        }
+		public override void Dispose()
+		{
+		}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public static void Register()
-        {
-            Registrar.RegisterAudioDriver(new DriverInfo<AudioTypeID>(
-                typeof(NullSoundImpl), AudioTypeID.Silent, "Silent", -100));
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        public override void Initialize()
-        {
-            Report("No audio driver found.  Audio will not be heard."); 
-        }
+		public override SoundBufferImpl CreateSoundBuffer(string filename)
+		{
+			return new NullSoundBufferImpl();
+		}
+		public override SoundBufferImpl CreateSoundBuffer(System.IO.Stream inStream)
+		{
+			return new NullSoundBufferImpl();
+		}
+		public override MusicImpl CreateMusic(string filename)
+		{
+			return new NullMusicImpl();
+		}
+		public override SoundBufferSessionImpl CreateSoundBufferSession(SoundBufferImpl buffer)
+		{
+			return new NullSoundBufferSessionImpl();
+		}
+		public override MusicImpl CreateMusic(System.IO.Stream musicStream)
+		{
+			return new NullMusicImpl();
+		}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public override void Dispose()
-        {
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public override SoundBufferImpl CreateSoundBuffer(string filename)
-        {
-            return new NullSoundBufferImpl();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public override MusicImpl CreateMusic(string filename)
-        {
-            return new NullMusicImpl();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public override SoundBufferSessionImpl CreateSoundBufferSession(SoundBufferImpl buffer)
-        {
-            return new NullSoundBufferSessionImpl();
-        }
-    }
+	}
 }

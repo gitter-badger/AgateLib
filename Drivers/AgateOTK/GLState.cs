@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -23,35 +23,36 @@ using System.Text;
 
 using AgateLib;
 using AgateLib.Geometry;
+using AgateLib.DisplayLib;
 
 using OpenTK.Graphics;
 
-namespace AgateLib.DisplayLib.OpenGL
+namespace AgateOTK
 {
-    class GLState
-    {
-        #region --- Private variables for state management ---
+	class GLState
+	{
+		#region --- Private variables for state management ---
 
-        private GLDrawBuffer mDrawBuffer;
+		private GLDrawBuffer mDrawBuffer;
 
-        #endregion
+		#endregion
 
-        public GLState()
-        {
-             mDrawBuffer = new GLDrawBuffer(this);
-        }
-
-
-        public GLDrawBuffer DrawBuffer
-        {
-            get { return mDrawBuffer; }
-        }
-
-        public void SetGLColor(Color color)
-        {
-            GL.Color4(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f);
-        }
+		public GLState()
+		{
+			mDrawBuffer = new GLDrawBuffer(this);
+		}
 
 
-    }
+		public GLDrawBuffer DrawBuffer
+		{
+			get { return mDrawBuffer; }
+		}
+
+		public void SetGLColor(Color color)
+		{
+			GL.Color4(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f);
+		}
+
+
+	}
 }

@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -19,257 +19,242 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Watch = System.Diagnostics.Stopwatch;
 
 namespace AgateLib
 {
-    /// <summary>
-    /// Static class which handles timing.  This is often used
-    /// to update object positions and animations.
-    /// </summary>
-    public static class Timing
-    {
-        private static StopWatch mAppTimer = new StopWatch();
+	/// <summary>
+	/// Static class which handles timing.  This is often used
+	/// to update object positions and animations.
+	/// </summary>
+	public static class Timing
+	{
+		private static StopWatch mAppTimer = new StopWatch();
 
-        private delegate void TimerDelegate();
+		private delegate void TimerDelegate();
 
-        private static event TimerDelegate PauseAllTimersEvent;
-        private static event TimerDelegate ResumeAllTimersEvent;
-        private static event TimerDelegate ForceResumeAllTimersEvent;
+		private static event TimerDelegate PauseAllTimersEvent;
+		private static event TimerDelegate ResumeAllTimersEvent;
+		private static event TimerDelegate ForceResumeAllTimersEvent;
 
-        /// <summary>
-        /// Returns the number of seconds since the application started.
-        /// </summary>
-        public static double TotalSeconds
-        {
-            get { return mAppTimer.TotalSeconds; }
-        }
-        /// <summary>
-        /// Returns the number of milliseconds since the application started.
-        /// </summary>
-        public static double TotalMilliseconds
-        {
-            get
-            {
-                return mAppTimer.TotalMilliseconds;
-            }
-        }
+		static Timing()
+		{
+			// Display the timer frequency and resolution.
+			if (Watch.IsHighResolution)
+			{
+				Console.WriteLine("Operations timed using the system's high-resolution performance counter.");
+			}
+			else
+			{
+				Console.WriteLine("Operations timed using the DateTime class.");
+			}
 
-        /// <summary>
-        /// Increments the pause counter.
-        /// If the counter is greater than zero, the timer won't advance.
-        /// </summary>
-        public static void Pause()
-        {
-            mAppTimer.Pause();
-        }
-        /// <summary>
-        /// Decrements the pause counter.
-        /// If the pause counter is zero the timer will begin advancing.
-        /// </summary>
-        public static void Resume()
-        {
-            mAppTimer.Resume();
-        }
+			long frequency = Watch.Frequency;
+			Console.WriteLine("  Timer frequency in ticks per second = {0}",
+				frequency);
+			long nanosecPerTick = (1000L * 1000L * 1000L) / frequency;
+			Console.WriteLine("  Timer is accurate within {0} nanoseconds",
+				nanosecPerTick);
 
-        /// <summary>
-        /// Sets the pause counter to zero, causing the timer to begin advancing
-        /// regardless of how many calls to Pause() are made.
-        /// </summary>
-        public static void ForceResume()
-        {
-            mAppTimer.ForceResume();
-        }
+		}
+		/// <summary>
+		/// Returns the number of seconds since the application started.
+		/// </summary>
+		public static double TotalSeconds
+		{
+			get { return mAppTimer.TotalSeconds; }
+		}
+		/// <summary>
+		/// Returns the number of milliseconds since the application started.
+		/// </summary>
+		public static double TotalMilliseconds
+		{
+			get { return mAppTimer.TotalMilliseconds; }
+		}
 
-        /// <summary>
-        /// Calls Pause() on all timers, and fires the PauseAllTimersEvent.
-        /// </summary>
-        public static void PauseAllTimers()
-        {
-            PauseAllTimersEvent();
-        }
+		/// <summary>
+		/// Increments the pause counter.
+		/// If the counter is greater than zero, the timer won't advance.
+		/// </summary>
+		public static void Pause()
+		{
+			mAppTimer.Pause();
+		}
+		/// <summary>
+		/// Decrements the pause counter.
+		/// If the pause counter is zero the timer will begin advancing.
+		/// </summary>
+		public static void Resume()
+		{
+			mAppTimer.Resume();
+		}
 
-        /// <summary>
-        /// Calls Resume() on all timers, and fires the ResumeAllTimersEvent.
-        /// </summary>
-        public static void ResumeAllTimers()
-        {
-            ResumeAllTimersEvent();
-        }
+		/// <summary>
+		/// Sets the pause counter to zero, causing the timer to begin advancing
+		/// regardless of how many calls to Pause() are made.
+		/// </summary>
+		public static void ForceResume()
+		{
+			mAppTimer.ForceResume();
+		}
 
-        /// <summary>
-        /// Calls ForceResume on all timers, and fires the ResumeAllTimersEvent.
-        /// You probably don't want to use this one much.
-        /// </summary>
-        public static void ForceResumeAllTimers()
-        {
-            ForceResumeAllTimersEvent();
-            ResumeAllTimersEvent();
-        }
+		/// <summary>
+		/// Calls Pause() on all timers, and fires the PauseAllTimersEvent.
+		/// </summary>
+		public static void PauseAllTimers()
+		{
+			PauseAllTimersEvent();
+		}
 
-        /// <summary>
-        /// Class which represents a StopWatch.
-        /// A StopWatch can be paused and reset independently of other
-        /// StopWatches.
-        /// </summary>
-        public class StopWatch : IDisposable
-        {
-            double mStartTime;
-            int mPause = 0;
-            double mPauseTime = 0;
+		/// <summary>
+		/// Calls Resume() on all timers, and fires the ResumeAllTimersEvent.
+		/// </summary>
+		public static void ResumeAllTimers()
+		{
+			ResumeAllTimersEvent();
+		}
 
-            /// <summary>
-            /// Constructs a timer object, and immediately begins 
-            /// keeping track of time.
-            /// </summary>
-            public StopWatch()
-                : this(true)
-            {
-            }
-            /// <summary>
-            /// Constructs a timer object.
-            /// If the timer starts paused, a call to Resume() must be made
-            /// for it to begin keeping track of time.
-            /// </summary>
-            /// <param name="autostart">Pass true to immediately begin keeping track of time.
-            /// False to pause the timer initially.</param>
-            public StopWatch(bool autostart)
-            {
-                PauseAllTimersEvent += Pause;
-                ResumeAllTimersEvent += Resume;
-                ForceResumeAllTimersEvent += ForceResume;
+		/// <summary>
+		/// Calls ForceResume on all timers, and fires the ResumeAllTimersEvent.
+		/// You probably don't want to use this one much.
+		/// </summary>
+		public static void ForceResumeAllTimers()
+		{
+			ForceResumeAllTimersEvent();
+			ResumeAllTimersEvent();
+		}
 
+		/// <summary>
+		/// Class which represents a StopWatch.
+		/// A StopWatch can be paused and reset independently of other
+		/// StopWatches.
+		/// </summary>
+		public class StopWatch : IDisposable
+		{
+			Watch watch = new Watch();
+			int mPause = 1;
 
-                try
-                {
-                    mStartTime = Core.Platform.GetTime();
-                }
-                catch (NullReferenceException e)
-                {
-                    GC.KeepAlive(e);
+			/// <summary>
+			/// Constructs a timer object, and immediately begins 
+			/// keeping track of time.
+			/// </summary>
+			public StopWatch()
+				: this(true)
+			{
+			}
+			/// <summary>
+			/// Constructs a timer object.
+			/// If the timer starts paused, a call to Resume() must be made
+			/// for it to begin keeping track of time.
+			/// </summary>
+			/// <param name="autostart">Pass true to immediately begin keeping track of time.
+			/// False to pause the timer initially.</param>
+			public StopWatch(bool autostart)
+			{
+				PauseAllTimersEvent += Pause;
+				ResumeAllTimersEvent += Resume;
+				ForceResumeAllTimersEvent += ForceResume;
 
-                    Core.Initialize();
-                    mStartTime = Core.Platform.GetTime();
-                }
+				if (autostart)
+				{
+					watch.Start();
+					mPause = 0;
+				}
+			}
 
+			/// <summary>
+			/// Destroys this timer.
+			/// </summary>
+			public void Dispose()
+			{
+				Dispose(true);
+				GC.SuppressFinalize(this);
+			}
+			/// <summary>
+			/// Removes this timer from events.
+			/// </summary>
+			/// <param name="manual"></param>
+			protected virtual void Dispose(bool manual)
+			{
+				if (manual)
+				{
+					PauseAllTimersEvent -= Pause;
+					ResumeAllTimersEvent -= Resume;
+					ForceResumeAllTimersEvent -= ForceResume;
+				}
+			}
 
-                if (autostart == false)
-                {
-                    Pause();
-                }
+			/// <summary>
+			/// Returns the number of seconds since the timer started.
+			/// </summary>
+			public double TotalSeconds
+			{
+				get { return (double)watch.ElapsedTicks / (double)Watch.Frequency; }
+			}
 
-            }
+			/// <summary>
+			/// Returns the number of ticks (milliseconds) since the timer started.
+			/// </summary>
+			public double TotalMilliseconds
+			{
+				get { return 1000.0 * TotalSeconds; }
+			}
 
-            /// <summary>
-            /// Destroys this timer.
-            /// </summary>
-            public void Dispose()
-            {
-                Dispose(true);
-                GC.SuppressFinalize(this);
-            }
-            /// <summary>
-            /// Removes this timer from events.
-            /// </summary>
-            /// <param name="manual"></param>
-            protected virtual void Dispose(bool manual)
-            {
-                if (manual)
-                {
-                    PauseAllTimersEvent -= Pause;
-                    ResumeAllTimersEvent -= Resume;
-                    ForceResumeAllTimersEvent -= ForceResume;
-                }
-            }
+			/// <summary>
+			/// Resets the timer to zero.
+			/// </summary>
+			public void Reset()
+			{
+				watch = new System.Diagnostics.Stopwatch();
+				if (mPause <= 0)
+					watch.Start();
+			}
 
-            /// <summary>
-            /// Returns the number of seconds since the timer started.
-            /// </summary>
-            public double TotalSeconds
-            {
-                get
-                {
-                    return TotalMilliseconds / 1000.0;
-                }
-            }
+			/// <summary>
+			/// Increments the pause counter.
+			/// If the counter is greater than zero, the timer won't advance.
+			/// </summary>
+			public void Pause()
+			{
+				watch.Stop();
+				mPause += 1;
+			}
+			/// <summary>
+			/// Decrements the pause counter.
+			/// If the pause counter is zero the timer will begin advancing.
+			/// </summary>
+			public void Resume()
+			{
+				mPause -= 1;
 
-            /// <summary>
-            /// Returns the number of ticks (milliseconds) since the timer started.
-            /// </summary>
-            public double TotalMilliseconds
-            {
-                get
-                {
-                    if (mPause == 0)
-                        return Core.Platform.GetTime() - mStartTime;
-                    else
-                        return mPauseTime - mStartTime;
-                }
-            }
+				if (mPause < 0)
+					mPause = 0;
 
-            /// <summary>
-            /// Resets the timer to zero.
-            /// </summary>
-            public void Reset()
-            {
-                mStartTime = Core.Platform.GetTime();
-
-                if (mPause > 0)
-                    mPauseTime = mStartTime;
-            }
-
-            /// <summary>
-            /// Increments the pause counter.
-            /// If the counter is greater than zero, the timer won't advance.
-            /// </summary>
-            public void Pause()
-            {
-                mPause += 1;
-
-                if (mPause == 1)
-                    mPauseTime = Core.Platform.GetTime();
-
-
-            }
-            /// <summary>
-            /// Decrements the pause counter.
-            /// If the pause counter is zero the timer will begin advancing.
-            /// </summary>
-            public void Resume()
-            {
-                mPause -= 1;
-
-                if (mPause == 0)
-                {
-                    mStartTime += Core.Platform.GetTime() - mPauseTime;
-
-                    mPauseTime = 0;
-                }
-                else if (mPause < 0)
-                    mPause = 0;
-            }
+				if (mPause == 0)
+					watch.Start();
+			}
 
 
-            /// <summary>
-            /// Sets the pause counter to zero, causing the timer to begin advancing
-            /// regardless of how many calls to Pause() are made.
-            /// </summary>
-            public void ForceResume()
-            {
-                if (mPause <= 0)
-                    return;
+			/// <summary>
+			/// Sets the pause counter to zero, causing the timer to begin advancing
+			/// regardless of how many calls to Pause() are made.
+			/// </summary>
+			public void ForceResume()
+			{
+				if (mPause <= 0)
+					return;
 
-                mPause = 1;
+				mPause = 0;
+				Resume();
+			}
 
-                Resume();
-            }
-
-            /// <summary>
-            /// Gets whether or not this StopWatch is paused.
-            /// </summary>
-            public bool IsPaused
-            {
-                get { return mPause > 0; }
-            }
-        }
-    }
+			/// <summary>
+			/// Gets whether or not this StopWatch is paused.
+			/// </summary>
+			public bool IsPaused
+			{
+				get { return mPause > 0; }
+			}
+		}
+	}
 }

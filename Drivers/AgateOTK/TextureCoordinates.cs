@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -20,23 +20,23 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AgateLib.DisplayLib.OpenGL
+namespace AgateOTK
 {
-    /// <summary>
-    /// Structure to contain source texture coordinates for drawing quads.
-    /// </summary>
-    public struct TextureCoordinates
-    {
-        public TextureCoordinates(float left, float top, float right, float bottom)
-        {
-            Top = top;
-            Left = left;
-            Bottom = bottom;
-            Right = right;
-        }
-        public float Top;
-        public float Bottom;
-        public float Left;
-        public float Right;
-    }
+	/// <summary>
+	/// Structure to contain source texture coordinates for drawing quads.
+	/// </summary>
+	public struct TextureCoordinates
+	{
+		public TextureCoordinates(float left, float top, float right, float bottom)
+		{
+			Top = top;
+			Left = left;
+			Bottom = bottom;
+			Right = right;
+		}
+		public float Top;
+		public float Bottom;
+		public float Left;
+		public float Right;
+	}
 }

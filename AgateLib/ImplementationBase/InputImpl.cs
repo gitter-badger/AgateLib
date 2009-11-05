@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -22,21 +22,21 @@ using System.Text;
 
 namespace AgateLib.ImplementationBase
 {
-    /// <summary>
-    /// Implementation for Input Manager.
-    /// </summary>
-    public abstract class InputImpl : DriverImplBase 
-    {
-        /// <summary>
-        /// Polls and counts joysticks
-        /// </summary>
-        /// <returns></returns>
-        public abstract int CountJoysticks();
+	/// <summary>
+	/// Implementation for Input Manager.
+	/// </summary>
+	public abstract class InputImpl : DriverImplBase
+	{
+		/// <summary>
+		/// Returns the number of joysticks attached to the system.
+		/// </summary>
+		/// <returns></returns>
+		public abstract int JoystickCount { get; }
 
-        /// <summary>
-        /// Creates joystick impls.
-        /// </summary>
-        /// <returns></returns>
-        public abstract IEnumerable<JoystickImpl> CreateJoysticks();
-    }
+		/// <summary>
+		/// Creates joystick impls.
+		/// </summary>
+		/// <returns></returns>
+		public abstract IEnumerable<JoystickImpl> CreateJoysticks();
+	}
 }

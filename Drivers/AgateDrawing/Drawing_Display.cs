@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -31,353 +31,324 @@ using AgateLib.PlatformSpecific;
 
 namespace AgateLib.DisplayLib.SystemDrawing
 {
-    using WinForms;
+	using WinForms;
 
-    public class Drawing_Display : DisplayImpl, IDisplayCaps , IPlatformServices 
-    {
-        #region --- Private variables ---
-            
-        private Graphics mGraphics;
-        private Drawing_IRenderTarget mRenderTarget;
+	public class Drawing_Display : DisplayImpl, IPlatformServices
+	{
+		#region --- Private variables ---
 
-        private bool mInFrame = false;
+		private Graphics mGraphics;
+		private Drawing_IRenderTarget mRenderTarget;
 
-        private Stack<Geometry.Rectangle> mClipRects = new Stack<Geometry.Rectangle>();
-        private Geometry.Rectangle mCurrentClipRect;
+		private bool mInFrame = false;
 
-        #endregion 
+		#endregion
 
-        #region --- Events and Event Handlers ---
+		#region --- Events and Event Handlers ---
 
-        protected override void OnRenderTargetChange(IRenderTarget oldRenderTarget)
-        {
-            if (mInFrame)
-                throw new InvalidOperationException(
-                    "Cannot change the current render target inside BeginFrame..EndFrame block!");
+		protected override void OnRenderTargetChange(IRenderTarget oldRenderTarget)
+		{
+			if (mInFrame)
+				throw new AgateException(
+					"Cannot change the current render target inside BeginFrame..EndFrame block!");
 
-            System.Diagnostics.Debug.Assert(mGraphics == null);
+			System.Diagnostics.Debug.Assert(mGraphics == null);
 
-            mRenderTarget = RenderTarget.Impl as Drawing_IRenderTarget;
+			mRenderTarget = RenderTarget.Impl as Drawing_IRenderTarget;
 
-            OnRenderTargetResize();
-        }
+			OnRenderTargetResize();
+		}
 
-        protected override void OnRenderTargetResize()
-        {
-        }
+		protected override void OnRenderTargetResize()
+		{
+		}
 
-        #endregion
-        #region --- Public Overridden properties ---
+		#endregion
+		#region --- Public Overridden properties ---
 
 
-        #endregion 
-        #region --- Public Properties ---
+		#endregion
+		#region --- Public Properties ---
 
-        public Graphics FrameGraphics
-        {
-            get { return mGraphics; }
-        }
+		public Graphics FrameGraphics
+		{
+			get { return mGraphics; }
+		}
 
-        #endregion
+		#endregion
 
-        #region --- Creation / Destruction ---
+		#region --- Creation / Destruction ---
 
-        public override void Initialize()
-        {
-            Report("System.Drawing driver instantiated for display.");
-        }
-        public override void Dispose() 
-        {
-        }
+		public override void Initialize()
+		{
+			Report("System.Drawing driver instantiated for display.");
+		}
+		public override void Dispose()
+		{
+		}
 
-        public override SurfaceImpl CreateSurface(string fileName)
-        {
-            return new Drawing_Surface(fileName);
-        }
-        public override SurfaceImpl CreateSurface(System.IO.Stream fileStream)
-        {
-            return new Drawing_Surface(fileStream);
-        }
-        public override SurfaceImpl CreateSurface(Geometry.Size surfaceSize)
-        {
-            return new Drawing_Surface(surfaceSize);
-        }
-        public override DisplayWindowImpl CreateDisplayWindow(CreateWindowParams windowParams)
-        {
-            return new Drawing_DisplayWindow(windowParams);
-        }
-        //public override DisplayWindowImpl CreateDisplayWindow(string title, int clientWidth, int clientHeight, string iconFile, bool startFullScreen, bool allowResize)
-        //{
-        //    return new Drawing_DisplayWindow(title, clientWidth, clientHeight, iconFile, startFullScreen, allowResize );
-        //}
-        //public override DisplayWindowImpl CreateDisplayWindow(System.Windows.Forms.Control renderTarget)
-        //{
-        //    return new Drawing_DisplayWindow(renderTarget);
-        //}
-        public override FontSurfaceImpl CreateFont(string fontFamily, float sizeInPoints, FontStyle style)
-        {
-            return new Drawing_FontSurface(fontFamily, sizeInPoints, style);
-        }
-        public override FontSurfaceImpl CreateFont(BitmapFontOptions bitmapOptions)
-        {
-            return WinForms.BitmapFontUtil.ConstructFromOSFont(bitmapOptions);
-        }
+		public override SurfaceImpl CreateSurface(string fileName)
+		{
+			return new Drawing_Surface(fileName);
+		}
+		public override SurfaceImpl CreateSurface(System.IO.Stream fileStream)
+		{
+			return new Drawing_Surface(fileStream);
+		}
+		public override SurfaceImpl CreateSurface(Geometry.Size surfaceSize)
+		{
+			return new Drawing_Surface(surfaceSize);
+		}
+		public override DisplayWindowImpl CreateDisplayWindow(CreateWindowParams windowParams)
+		{
+			return new Drawing_DisplayWindow(windowParams);
+		}
+		//public override DisplayWindowImpl CreateDisplayWindow(string title, int clientWidth, int clientHeight, string iconFile, bool startFullScreen, bool allowResize)
+		//{
+		//    return new Drawing_DisplayWindow(title, clientWidth, clientHeight, iconFile, startFullScreen, allowResize );
+		//}
+		//public override DisplayWindowImpl CreateDisplayWindow(System.Windows.Forms.Control renderTarget)
+		//{
+		//    return new Drawing_DisplayWindow(renderTarget);
+		//}
+		public override FontSurfaceImpl CreateFont(string fontFamily, float sizeInPoints, FontStyle style)
+		{
+			return new Drawing_FontSurface(fontFamily, sizeInPoints, style);
+		}
+		public override FontSurfaceImpl CreateFont(BitmapFontOptions bitmapOptions)
+		{
+			return WinForms.BitmapFontUtil.ConstructFromOSFont(bitmapOptions);
+		}
 
-        #endregion 
-        #region --- Direct modification of the back buffer ---
+		#endregion
+		#region --- Direct modification of the back buffer ---
 
-        public override void Clear(Geometry.Color color)
-        {
-            CheckInFrame("Clear");
+		public override void Clear(Geometry.Color color)
+		{
+			CheckInFrame("Clear");
 
-            mGraphics.Clear(Interop.Convert(color));
-        }
-        public override void Clear(Geometry.Color color, Geometry.Rectangle dest_rect)
-        {
-            CheckInFrame("Clear");
+			mGraphics.Clear(Interop.Convert(color));
+		}
+		public override void Clear(Geometry.Color color, Geometry.Rectangle dest_rect)
+		{
+			CheckInFrame("Clear");
 
-            mGraphics.FillRectangle(
-                new SolidBrush(Interop.Convert(color)), Interop.Convert(dest_rect));
-        }
+			mGraphics.FillRectangle(
+				new SolidBrush(Interop.Convert(color)), Interop.Convert(dest_rect));
+		}
 
-        public override void DrawLine(int x1, int y1, int x2, int y2, Geometry.Color color)
-        {
-            CheckInFrame("DrawLine");
+		public override void DrawLine(Geometry.Point a, Geometry.Point b, Geometry.Color color)
+		{
+			CheckInFrame("DrawLine");
 
-            mGraphics.DrawLine(new Pen(Interop.Convert(color)), x1, y1, x2, y2);
-        }
-        public override void DrawLine(Geometry.Point a, Geometry.Point b, Geometry.Color color)
-        {
-            CheckInFrame("DrawLine");
+			mGraphics.DrawLine(new Pen(Interop.Convert(color)),
+				Interop.Convert(a), Interop.Convert(b));
+		}
 
-            mGraphics.DrawLine(new Pen(Interop.Convert(color)),
-                Interop.Convert(a), Interop.Convert(b));
-        }
+		public override void DrawRect(Geometry.Rectangle rect, Geometry.Color color)
+		{
+			CheckInFrame("DrawRect");
 
-        public override void DrawRect(Geometry.Rectangle rect, Geometry.Color color)
-        {
-            CheckInFrame("DrawRect");
+			mGraphics.DrawRectangle(new Pen(Interop.Convert(color)),
+				Interop.Convert(rect));
+		}
+		public override void DrawRect(Geometry.RectangleF rect, Geometry.Color color)
+		{
+			CheckInFrame("DrawRect");
 
-            mGraphics.DrawRectangle(new Pen(Interop.Convert(color)),
-                Interop.Convert(rect));
-        }
-        public override void DrawRect(Geometry.RectangleF rect, Geometry.Color color)
-        {
-            CheckInFrame("DrawRect");
+			mGraphics.DrawRectangle(new Pen(Interop.Convert(color)),
+				Rectangle.Round(Interop.Convert(rect)));
+		}
+		public override void FillRect(Geometry.Rectangle rect, Geometry.Color color)
+		{
+			CheckInFrame("FillRect");
 
-            mGraphics.DrawRectangle(new Pen(Interop.Convert(color)),
-                Rectangle.Round(Interop.Convert(rect)));
-        }
-        public override void FillRect(Geometry.Rectangle rect, Geometry.Color color)
-        {
-            CheckInFrame("FillRect");
-            
-            mGraphics.FillRectangle(new SolidBrush(Interop.Convert(color)), 
-                Interop.Convert(rect));
-        }
-        public override void FillRect(Geometry.Rectangle rect, Geometry.Gradient color)
-        {
-            CheckInFrame("FillRect");
+			mGraphics.FillRectangle(new SolidBrush(Interop.Convert(color)),
+				Interop.Convert(rect));
+		}
+		public override void FillRect(Geometry.Rectangle rect, Geometry.Gradient color)
+		{
+			CheckInFrame("FillRect");
 
-            FillRect(rect, color.AverageColor);
-        }
-        public override void FillRect(Geometry.RectangleF rect, Geometry.Color color)
-        {
-            CheckInFrame("FillRect");
+			FillRect(rect, color.AverageColor);
+		}
+		public override void FillRect(Geometry.RectangleF rect, Geometry.Color color)
+		{
+			CheckInFrame("FillRect");
 
-            mGraphics.FillRectangle(new SolidBrush(Interop.Convert(color)),
-                Interop.Convert(rect));
-        }
-        public override void FillRect(Geometry.RectangleF rect, Geometry.Gradient color)
-        {
-            CheckInFrame("FillRect");
+			mGraphics.FillRectangle(new SolidBrush(Interop.Convert(color)),
+				Interop.Convert(rect));
+		}
+		public override void FillRect(Geometry.RectangleF rect, Geometry.Gradient color)
+		{
+			CheckInFrame("FillRect");
 
-            FillRect(rect, color.AverageColor);
-        }
+			FillRect(rect, color.AverageColor);
+		}
 
-        #endregion
-        #region --- Begin/End Frame and DeltaTime ---
+		public override void FillPolygon(Geometry.PointF[] pts, Geometry.Color color)
+		{
+			SolidBrush b = new SolidBrush(Interop.Convert(color));
 
-        protected override void OnBeginFrame()
-        {
-            mGraphics = Graphics.FromImage(mRenderTarget.BackBuffer);
-        }
-        protected override void OnEndFrame()
-        {
-            mGraphics.Dispose();
-            mGraphics = null;
+			PointF[] p = new PointF[pts.Length];
+			for (int i = 0; i < pts.Length; i++)
+				p[i] = Interop.Convert(pts[i]);
 
-            while (mClipRects.Count > 0)
-                PopClipRect();
+			mGraphics.FillPolygon(b, p);
 
-            Drawing_IRenderTarget renderTarget = RenderTarget.Impl as Drawing_IRenderTarget;
-            renderTarget.EndRender();
+			b.Dispose();
+		}
 
-        }
-        #endregion
-        #region --- Clip Rect Stuff ---
 
-        public override void SetClipRect(Geometry.Rectangle newClipRect)
-        {
-            mGraphics.SetClip(Interop.Convert(newClipRect));
-            mCurrentClipRect = newClipRect;
-        }
-        public override void PushClipRect(Geometry.Rectangle newClipRect)
-        {
-            mClipRects.Push(mCurrentClipRect);
-            SetClipRect(newClipRect);
-        }
-        public override void PopClipRect()
-        {
-#if DEBUG
-            if (mClipRects.Count == 0)
-                throw new Exception("You have popped the cliprect too many times.");
-#endif
-            
-            SetClipRect(mClipRects.Pop());
-        }
+		#endregion
+		#region --- Begin/End Frame and DeltaTime ---
 
-        
-        #endregion 
+		protected override void OnBeginFrame()
+		{
+			mGraphics = Graphics.FromImage(mRenderTarget.BackBuffer);
+		}
+		protected override void OnEndFrame()
+		{
+			mGraphics.Dispose();
+			mGraphics = null;
 
-        protected override void ProcessEvents()
-        {
-            System.Windows.Forms.Application.DoEvents();
-        }
-    
-        public override PixelFormat DefaultSurfaceFormat
-        {
-            get { return PixelFormat.BGRA8888; }
-        }
-    
-        public static void Register()
-        {
-            Registrar.RegisterDisplayDriver(
-                new DriverInfo<DisplayTypeID>(typeof(Drawing_Display), DisplayTypeID.Reference,
-                "System.Drawing", 0));
-        }
+			Drawing_IRenderTarget renderTarget = RenderTarget.Impl as Drawing_IRenderTarget;
+			renderTarget.EndRender();
 
-        public override Geometry.Size MaxSurfaceSize
-        {
-            get { return new Geometry.Size(1024, 1024); }
-        }
+		}
+		#endregion
+		#region --- Clip Rect Stuff ---
 
-        public override void FlushDrawBuffer()
-        {
-        }
+		public override void SetClipRect(Geometry.Rectangle newClipRect)
+		{
+			mGraphics.SetClip(Interop.Convert(newClipRect));
+		}
 
-        public override void SetOrthoProjection(AgateLib.Geometry.Rectangle region)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
-        public override void DoLighting(LightManager lights)
-        {
-            throw new InvalidOperationException("Lighting is not supported.");
-        }
 
-        protected override void SavePixelBuffer(PixelBuffer pixelBuffer, string filename, ImageFileFormat format)
-        {
-            WinForms.FormUtil.SavePixelBuffer(pixelBuffer, filename, format);
-        }
+		#endregion
 
-        public override IDisplayCaps Caps
-        {
-            get { return this; }
-        }
+		protected override void ProcessEvents()
+		{
+			System.Windows.Forms.Application.DoEvents();
+		}
 
-        #region --- IDisplayCaps Members ---
+		public override PixelFormat DefaultSurfaceFormat
+		{
+			get { return PixelFormat.BGRA8888; }
+		}
 
-        bool IDisplayCaps.SupportsScaling
-        {
-            get { return true; }
-        }
+		public override Geometry.Size MaxSurfaceSize
+		{
+			get { return new Geometry.Size(1024, 1024); }
+		}
 
-        bool IDisplayCaps.SupportsRotation
-        {
-            get { return true; }
-        }
+		public override void FlushDrawBuffer()
+		{
+		}
 
-        bool IDisplayCaps.SupportsColor
-        {
-            get { return true; }
-        }
-        bool IDisplayCaps.SupportsGradient
-        {
-            get { return false; }
-        }
-        bool IDisplayCaps.SupportsSurfaceAlpha
-        {
-            get { return true; }
-        }
+		public override void SetOrthoProjection(AgateLib.Geometry.Rectangle region)
+		{
+			throw new AgateException("SetOrthoProjection is not implemented in AgateDrawing.dll.");
+		}
 
-        bool IDisplayCaps.SupportsPixelAlpha
-        {
-            get { return true; }
-        }
+		protected override void SavePixelBuffer(PixelBuffer pixelBuffer, string filename, ImageFileFormat format)
+		{
+			WinForms.FormUtil.SavePixelBuffer(pixelBuffer, filename, format);
+		}
 
-        bool IDisplayCaps.SupportsLighting
-        {
-            get { return false; }
-        }
+		protected override void HideCursor()
+		{
+			System.Windows.Forms.Cursor.Hide();
+		}
+		protected override void ShowCursor()
+		{
+			System.Windows.Forms.Cursor.Show();
+		}
 
-        int IDisplayCaps.MaxLights
-        {
-            get { return 0; }
-        }
+		#region --- IDisplayCaps Members ---
 
-        bool IDisplayCaps.IsHardwareAccelerated
-        {
-            get { return false; }
-        }
+		public override bool Supports(DisplayBoolCaps caps)
+		{
+			switch (caps)
+			{
+				case DisplayBoolCaps.Scaling: return true;
+				case DisplayBoolCaps.Rotation: return true;
+				case DisplayBoolCaps.Color: return true;
+				case DisplayBoolCaps.Gradient: return false;
+				case DisplayBoolCaps.SurfaceAlpha: return true;
+				case DisplayBoolCaps.PixelAlpha: return true;
+				case DisplayBoolCaps.IsHardwareAccelerated: return false;
+				case DisplayBoolCaps.FullScreen: return false;
+				case DisplayBoolCaps.FullScreenModeSwitching: return false;
+				case DisplayBoolCaps.Shaders: return false;
+				case DisplayBoolCaps.CanCreateBitmapFont: return true;
+			}
 
-        bool IDisplayCaps.Supports3D
-        {
-            get { return false; }
-        }
-        bool IDisplayCaps.SupportsFullScreen
-        {
-            get { return false; }
-        }
-        bool IDisplayCaps.SupportsFullScreenModeSwitching
-        {
-            get { return false; }
-        }
+			return false;
+		}
 
-        bool IDisplayCaps.CanCreateBitmapFont
-        {
-            get { return true; }
-        }
+		public override IEnumerable<AgateLib.DisplayLib.Shaders.ShaderLanguage> SupportedShaderLanguages
+		{
+			get { yield return AgateLib.DisplayLib.Shaders.ShaderLanguage.None; }
+		}
 
-        #endregion
+		#endregion
 
-        #region IPlatformServices Members
+		#region IPlatformServices Members
 
-        protected override IPlatformServices GetPlatformServices()
-        {
-            return this;
-        }
-        Utility.PlatformType IPlatformServices.PlatformType
-        {
-            get
-            {
-                switch (Environment.OSVersion.Platform)
-                {
-                    case PlatformID.Win32Windows:
-                    case PlatformID.Win32S:
-                    case PlatformID.Win32NT:
-                    case PlatformID.WinCE:
-                        return Utility.PlatformType.Windows;
+		protected override IPlatformServices GetPlatformServices()
+		{
+			return this;
+		}
+		Utility.PlatformType IPlatformServices.PlatformType
+		{
+			get
+			{
+				switch (Environment.OSVersion.Platform)
+				{
+					case PlatformID.Win32Windows:
+					case PlatformID.Win32S:
+					case PlatformID.Win32NT:
+					case PlatformID.WinCE:
+						return Utility.PlatformType.Windows;
 
-                    case PlatformID.Unix:
-                        return Utility.PlatformType.Linux;
-                }
+					case PlatformID.Unix:
+						return Utility.PlatformType.Linux;
+				}
 
-                return Utility.PlatformType.Unknown;
-            }
-        }
+				return Utility.PlatformType.Unknown;
+			}
+		}
 
-        #endregion
-    }
+		#endregion
 
-    
+
+		protected override bool GetRenderState(RenderStateBool renderStateBool)
+		{
+			switch (renderStateBool)
+			{
+				// vsync is not supported, but shouldn't throw an error.
+				case RenderStateBool.WaitForVerticalBlank: return false;
+				default:
+					throw new NotSupportedException(string.Format(
+						"The specified render state, {0}, is not supported by this driver."));
+			}
+		}
+
+		protected override void SetRenderState(RenderStateBool renderStateBool, bool value)
+		{
+			switch (renderStateBool)
+			{
+				case RenderStateBool.WaitForVerticalBlank:
+					// vsync is not supported, but shouldn't throw an error.
+					break;
+
+				default:
+					throw new NotSupportedException(string.Format(
+						"The specified render state, {0}, is not supported by this driver."));
+			}
+		}
+	}
+
+
 }

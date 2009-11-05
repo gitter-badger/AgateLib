@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -24,34 +24,34 @@ using AgateLib.Geometry;
 
 namespace AgateLib.ImplementationBase
 {
-    /// <summary>
-    /// Defines the interface used for render targets.
-    /// SurfaceImpl and DisplayWindowImpl implement this interface.
-    /// </summary>
-    public interface IRenderTargetImpl
-    {
-        /// <summary>
-        /// Utility functions that can be called by the rendering system
-        /// when rendering starts and ends.
-        /// </summary>
-        void BeginRender();
-        /// <summary>
-        /// Utility functions that can be called by the rendering system
-        /// when rendering starts and ends.
-        /// </summary>
-        void EndRender();
-        /// <summary>
-        /// Gets the Size of the render target, in pixels.
-        /// </summary>
-        Size Size { get; }
-        /// <summary>
-        /// Gets the Height of the render target, in pixels.
-        /// </summary>
-        int Width { get; }
-        /// <summary>
-        /// Gets the Width of the render target, in pixels.
-        /// </summary>
-        int Height { get; }
+	/// <summary>
+	/// Defines the interface used for render targets.
+	/// SurfaceImpl and DisplayWindowImpl implement this interface.
+	/// </summary>
+	public interface IRenderTargetImpl
+	{
+		/// <summary>
+		/// Utility functions that can be called by the rendering system
+		/// when rendering starts and ends.
+		/// </summary>
+		void BeginRender();
+		/// <summary>
+		/// Utility functions that can be called by the rendering system
+		/// when rendering starts and ends.
+		/// </summary>
+		void EndRender();
+		/// <summary>
+		/// Gets the Size of the render target, in pixels.
+		/// </summary>
+		Size Size { get; }
+		/// <summary>
+		/// Gets the Height of the render target, in pixels.
+		/// </summary>
+		int Width { get; }
+		/// <summary>
+		/// Gets the Width of the render target, in pixels.
+		/// </summary>
+		int Height { get; }
 
-    }
+	}
 }

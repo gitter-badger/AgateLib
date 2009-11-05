@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -26,171 +26,170 @@ using AgateLib.Drivers;
 
 namespace AgateLib.WinForms
 {
-    /// <summary>
-    /// A form which is used to ask the user which subsystems to use.
-    /// </summary>
-    /// <remarks>
-    /// [Experimental - This class will be moved to into a different assembly
-    /// in the future.]
-    /// </remarks>
-    public partial class SetSystemsForm : Form, IUserSetSystems
-    {
-        private bool mChooseDisplay, mChooseAudio, mChooseInput;
-        private DisplayTypeID mDisplayType;
-        private AudioTypeID mAudioType;
-        private InputTypeID mInputType;
+	/// <summary>
+	/// A form which is used to ask the user which subsystems to use.
+	/// </summary>
+	/// <remarks>
+	/// [Experimental - This class will be moved to into a different assembly
+	/// in the future.]
+	/// </remarks>
+	partial class SetSystemsForm : Form, IUserSetSystems
+	{
+		private bool mChooseDisplay, mChooseAudio, mChooseInput;
+		private DisplayTypeID mDisplayType;
+		private AudioTypeID mAudioType;
+		private InputTypeID mInputType;
 
-        /// <summary>
-        /// DisplayTypeID chosen by user.
-        /// </summary>
-        public DisplayTypeID DisplayType
-        {
-            get { return mDisplayType; }
-        }
-        /// <summary>
-        /// AudioTypeID chosen by user.
-        /// </summary>
-        public AudioTypeID AudioType
-        {
-            get { return mAudioType; }
-        }
-        /// <summary>
-        /// InputTypeID chosen by user.
-        /// </summary>
-        public InputTypeID InputType
-        {
-            get { return mInputType; }
-        }
+		/// <summary>
+		/// DisplayTypeID chosen by user.
+		/// </summary>
+		public DisplayTypeID DisplayType
+		{
+			get { return mDisplayType; }
+		}
+		/// <summary>
+		/// AudioTypeID chosen by user.
+		/// </summary>
+		public AudioTypeID AudioType
+		{
+			get { return mAudioType; }
+		}
+		/// <summary>
+		/// InputTypeID chosen by user.
+		/// </summary>
+		public InputTypeID InputType
+		{
+			get { return mInputType; }
+		}
 
-        public SetSystemsForm()
-        {
-            InitializeComponent();
-        }
-        /// <summary>
-        /// Constructs the form.  Specifies whether display, audio and input
-        /// should be allowed to be chosen.
-        /// </summary>
-        /// <param name="chooseDisplay"></param>
-        /// <param name="chooseAudio"></param>
-        /// <param name="chooseInput"></param>
-        public SetSystemsForm(bool chooseDisplay, bool chooseAudio, bool chooseInput)
-        {
-            InitializeComponent();
+		/// <summary>
+		/// Constructs a SetSystemsForm object.
+		/// </summary>
+		public SetSystemsForm()
+		{
+			InitializeComponent();
 
-        }
+			Icon = FormUtil.AgateLibIcon;
+		}
 
-        /// <summary>
-        /// Sets default.
-        /// </summary>
-        /// <param name="mode"></param>
-        public void SetDefaultDisplay(DriverInfo<DisplayTypeID> mode)
-        {
-            displayList.SelectedItem = mode;
-        }
-        /// <summary>
-        /// Sets default.
-        /// </summary>
-        /// <param name="mode"></param>
-        public void SetDefaultAudio(DriverInfo<AudioTypeID> mode)
-        {
-            audioList.SelectedItem = mode;
-        }
-        /// <summary>
-        /// Sets default.
-        /// </summary>
-        /// <param name="mode"></param>
-        public void SetDefaultInput(DriverInfo<InputTypeID> mode)
-        {
-            inputList.SelectedItem = mode;
-        }
+		/// <summary>
+		/// Adds.
+		/// </summary>
+		/// <param name="info"></param>
+		public void AddDisplayType(AgateDriverInfo info)
+		{
+			displayList.Items.Add(info);
+		}
+		/// <summary>
+		/// Adds.
+		/// </summary>
+		/// <param name="info"></param>
+		public void AddAudioType(AgateDriverInfo info)
+		{
+			audioList.Items.Add(info);
+		}
+		/// <summary>
+		/// Adds.
+		/// </summary>
+		/// <param name="info"></param>
+		public void AddInputType(AgateDriverInfo info)
+		{
+			inputList.Items.Add(info);
+		}
 
-        /// <summary>
-        /// Adds.
-        /// </summary>
-        /// <param name="info"></param>
-        public void AddDisplayType(DriverInfo<DisplayTypeID> info)
-        {
-            displayList.Items.Add(info);
-        }
-        /// <summary>
-        /// Adds.
-        /// </summary>
-        /// <param name="info"></param>
-        public void AddAudioType(DriverInfo<AudioTypeID> info)
-        {
-            audioList.Items.Add(info);
-        }
-        /// <summary>
-        /// Adds.
-        /// </summary>
-        /// <param name="info"></param>
-        public void AddInputType(DriverInfo<InputTypeID> info)
-        {
-            inputList.Items.Add(info);
-        }
+		private void btnOK_Click(object sender, EventArgs e)
+		{
+			if (mChooseDisplay)
+			{
+				AgateDriverInfo display = (AgateDriverInfo)displayList.SelectedItem;
+				mDisplayType = (DisplayTypeID)display.DriverTypeID;
+			}
 
-        private void btnOK_Click(object sender, EventArgs e)
-        {
-            if (mChooseDisplay)
-            {
-                DriverInfo<DisplayTypeID> display = displayList.SelectedItem as DriverInfo<DisplayTypeID>;
-                mDisplayType = display.TypeID;
-            }
+			if (mChooseAudio)
+			{
+				AgateDriverInfo audio = (AgateDriverInfo)audioList.SelectedItem;
+				mAudioType = (AudioTypeID)audio.DriverTypeID;
+			}
 
-            if (mChooseAudio)
-            {
-                DriverInfo<AudioTypeID> audio = audioList.SelectedItem as DriverInfo<AudioTypeID>;
-                mAudioType = audio.TypeID;
-            }
+			if (mChooseInput)
+			{
+				AgateDriverInfo input = (AgateDriverInfo)inputList.SelectedItem;
+				mInputType = (InputTypeID)input.DriverTypeID;
+			}
+		}
 
-            if (mChooseInput)
-            {
-                DriverInfo<InputTypeID> input = inputList.SelectedItem as DriverInfo<InputTypeID>;
-                mInputType = input.TypeID;
-            }
+		private void SelectFirst(ComboBox theComboBox)
+		{
+			if (theComboBox.Items.Count > 0)
+				theComboBox.SelectedIndex = 0;
+		}
 
-        }
+		private void SelectItem(ComboBox theComboBox, int driverTypeID)
+		{
+			for (int i = 0; i < theComboBox.Items.Count; i++)
+			{
+				AgateDriverInfo item = (AgateDriverInfo)theComboBox.Items[i];
 
-        private void frmSetSystems_Load(object sender, EventArgs e)
-        {
+				if (item.DriverTypeID == driverTypeID)
+				{
+					theComboBox.SelectedIndex = i;
+					return;
+				}
+			}
 
-        }
+			SelectFirst(theComboBox);
+		}
 
-        #region IUserSetSystems Members
+		#region IUserSetSystems Members
+
+		public void SetChoices(bool chooseDisplay, bool chooseAudio, bool chooseInput, 
+			DisplayTypeID preferredDisplay, AudioTypeID preferredAudio, InputTypeID preferredInput)
+		{
+			mChooseDisplay = chooseDisplay;
+			mChooseAudio = chooseAudio;
+			mChooseInput = chooseInput;
+
+			displayList.Enabled = mChooseDisplay;
+			audioList.Enabled = mChooseAudio;
+			inputList.Enabled = mChooseInput;
+
+			if (preferredDisplay != DisplayTypeID.AutoSelect)
+				SelectItem(displayList, (int)preferredDisplay);
+			else
+				SelectFirst(displayList);
+
+			if (preferredAudio != AudioTypeID.AutoSelect)
+				SelectItem(audioList, (int)preferredAudio);
+			else
+				SelectFirst(audioList);
+
+			if (preferredInput != InputTypeID.AutoSelect)
+				SelectItem(inputList, (int)preferredInput);
+			else
+				SelectFirst(inputList);
+		}
 
 
-        public SetSystemsDialogResult RunDialog()
-        {
+
+		public SetSystemsDialogResult RunDialog()
+		{
 			if (displayList.Items.Count == 0 && mChooseDisplay)
 				throw new AgateException("No display drivers were found.");
 
-            DialogResult res = ShowDialog();
+			DialogResult res = ShowDialog();
 
-            switch (res)
-            {
-                case DialogResult.OK:
-                    return SetSystemsDialogResult.OK;
+			switch (res)
+			{
+				case DialogResult.OK:
+					return SetSystemsDialogResult.OK;
 
-                case DialogResult.Cancel:
-                default:
-                    return SetSystemsDialogResult.Cancel;
-            }
-        }
+				case DialogResult.Cancel:
+				default:
+					return SetSystemsDialogResult.Cancel;
+			}
+		}
 
-        public void SetChoices(bool chooseDisplay, bool chooseAudio, bool chooseInput)
-        {
-            mChooseDisplay = chooseDisplay;
-            mChooseAudio = chooseAudio;
-            mChooseInput = chooseInput;
-
-            displayList.Enabled = mChooseDisplay;
-            audioList.Enabled = mChooseAudio;
-            inputList.Enabled = mChooseInput;
-        }
-
-
-        #endregion
-
-    }
+		#endregion
+	}
 
 }

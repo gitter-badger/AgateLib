@@ -11,7 +11,7 @@
 //     The Original Code is AgateLib.
 //
 //     The Initial Developer of the Original Code is Erik Ylvisaker.
-//     Portions created by Erik Ylvisaker are Copyright (C) 2006.
+//     Portions created by Erik Ylvisaker are Copyright (C) 2006-2009.
 //     All Rights Reserved.
 //
 //     Contributor(s): Erik Ylvisaker
@@ -22,10 +22,15 @@ using System.Text;
 
 using AgateLib.ImplementationBase;
 
-namespace AgateLib.DisplayLib.OpenGL
+namespace AgateOTK
 {
-    interface GL_IRenderTarget : IRenderTargetImpl
-    {
-        void MakeCurrent();
-    }
+	interface GL_IRenderTarget : IRenderTargetImpl
+	{
+		void MakeCurrent();
+
+		// TODO: fix this hack and remove these interface members.
+		void HideCursor();
+		void ShowCursor();
+
+	}
 }
