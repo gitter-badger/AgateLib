@@ -22,111 +22,88 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Text;
 
-using AgateLib.ImplementationBase;
+using AgateLib.DisplayLib;
+using AgateLib.DisplayLib.ImplementationBase;
+using AgateLib.WinForms;
+using FontStyle = AgateLib.DisplayLib.FontStyle;
+using Geometry = AgateLib.Geometry;
 
-namespace AgateLib.DisplayLib.SystemDrawing
+namespace AgateDrawing
 {
-    using AgateLib.DisplayLib;
-    using WinForms;
+	class Drawing_FontSurface : FontSurfaceImpl
+	{
+		Font mFont;
 
-    class Drawing_FontSurface : FontSurfaceImpl
-    {
-        Font mFont;
+		public Drawing_FontSurface(string fontFamily, float sizeInPoints, FontStyle style)
+		{
+			System.Drawing.FontStyle drawingStyle = System.Drawing.FontStyle.Regular;
 
-        public Drawing_FontSurface(string fontFamily, float sizeInPoints, FontStyle style)
-        {
-            System.Drawing.FontStyle drawingStyle = System.Drawing.FontStyle.Regular;
+			if ((style & FontStyle.Bold) > 0)
+				drawingStyle |= System.Drawing.FontStyle.Bold;
+			if ((style & FontStyle.Italic) > 0)
+				drawingStyle |= System.Drawing.FontStyle.Italic;
+			if ((style & FontStyle.Strikeout) > 0)
+				drawingStyle |= System.Drawing.FontStyle.Strikeout;
+			if ((style & FontStyle.Underline) > 0)
+				drawingStyle |= System.Drawing.FontStyle.Underline;
 
-            if ((style & FontStyle.Bold) > 0)
-                drawingStyle |= System.Drawing.FontStyle.Bold;
-            if ((style & FontStyle.Italic) > 0)
-                drawingStyle |= System.Drawing.FontStyle.Italic;
-            if ((style & FontStyle.Strikeout) > 0)
-                drawingStyle |= System.Drawing.FontStyle.Strikeout;
-            if ((style & FontStyle.Underline) > 0)
-                drawingStyle |= System.Drawing.FontStyle.Underline;
+			mFont = new Font(fontFamily, sizeInPoints, drawingStyle);
+		}
+		public override void Dispose()
+		{
+			mFont = null;
+		}
 
-            mFont = new Font(fontFamily, sizeInPoints, drawingStyle);
-        }
-        public override void Dispose()
-        {
-            mFont = null;
-        }
+		public override int FontHeight
+		{
+			get { return mFont.Height; }
+		}
+		public override void DrawText(FontState state)
+		{
+			Geometry.PointF shift = Origin.CalcF(state.DisplayAlignment,
+				MeasureString(state, state.Text));
 
-        public override void DrawText(Geometry.Point dest_pt, string text)
-        {
-            DrawText(new Geometry.PointF((float)dest_pt.X, (float)dest_pt.Y), text);
+			PointF dest_pt = Interop.Convert(state.Location);
+			dest_pt.X -= shift.X;
+			dest_pt.Y -= shift.Y;
 
-        }
-        public override void DrawText(Geometry.PointF dest_pt, string text)
-        {
-            Geometry.PointF dest = Origin.CalcF(DisplayAlignment, StringDisplaySize(text));
+			Drawing_Display disp = Display.Impl as Drawing_Display;
+			Graphics g = disp.FrameGraphics;
 
-            dest_pt.X -= dest.X;
-            dest_pt.Y -= dest.Y;
+			GraphicsState g_state = g.Save();
+			double scalex = state.ScaleWidth, scaley = state.ScaleHeight;
 
-            Drawing_Display disp = Display.Impl as Drawing_Display;
-            Graphics g = disp.FrameGraphics;
+			g.TranslateTransform(dest_pt.X, dest_pt.Y);
+			g.ScaleTransform((float)scalex, (float)scaley);
 
-            GraphicsState state = g.Save();
-            double scalex, scaley;
+			g.DrawString(state.Text, mFont,
+				new SolidBrush(Interop.Convert(state.Color)), Point.Empty);
 
-            GetScale(out scalex, out scaley);
+			g.Restore(g_state);
+		}
+		public override AgateLib.Geometry.Size MeasureString(FontState state, string text)
+		{
+			Drawing_Display disp = Display.Impl as Drawing_Display;
+			Graphics g = disp.FrameGraphics;
+			bool disposeGraphics = false;
 
-            g.TranslateTransform(dest_pt.X, dest_pt.Y);
-            g.ScaleTransform((float)scalex, (float)scaley);
+			if (g == null)
+			{
+				g = Graphics.FromImage((disp.RenderTarget.Impl as Drawing_FrameBuffer).BackBufferBitmap);
 
-            g.DrawString(text, mFont, 
-                new SolidBrush(Interop.Convert(Color)), Point.Empty);
+				disposeGraphics = true;
+			}
 
-            g.Restore(state);
+			SizeF result = new SizeF(g.MeasureString(text, mFont));
 
-        }
-        public override void DrawText(int dest_x, int dest_y, string text)
-        {
-            DrawText(new Geometry.PointF((float)dest_x, (float)dest_y), text);
-        }
-        public override void DrawText(double dest_x, double dest_y, string text)
-        {
-            DrawText(new Geometry.PointF((float)dest_x, (float)dest_y), text);
-        }
+			if (disposeGraphics)
+				g.Dispose();
 
-        public override int StringDisplayWidth(string text)
-        {
-            return StringDisplaySize(text).Width;
-        }
-        public override int StringDisplayHeight(string text)
-        {
-            return StringDisplaySize(text).Height;
-        }
-        public override Geometry.Size StringDisplaySize(string text)
-        {
-            Drawing_Display disp = Display.Impl as Drawing_Display;
-            Graphics g = disp.FrameGraphics;
-            bool disposeGraphics = false;
 
-            if (g == null)
-            {
+			result.Height *= (float)state.ScaleWidth;
+			result.Width *= (float)state.ScaleHeight;
 
-                g = Graphics.FromImage((disp.RenderTarget.Impl as Drawing_IRenderTarget).BackBuffer);
-
-                disposeGraphics = true;
-            }
-
-            SizeF result = new SizeF(g.MeasureString(text, mFont));
-            double scalex, scaley;
-
-            if (disposeGraphics)
-                g.Dispose();
-
-            GetScale(out scalex, out scaley);
-
-            result.Height *= (float)scalex;
-            result.Width *= (float)scaley;
-
-            return new Geometry.Size((int)result.Width, (int)result.Height);
-        }
-
-    }
-
+			return new Geometry.Size((int)result.Width, (int)result.Height);
+		}
+	}
 }

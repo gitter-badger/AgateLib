@@ -25,8 +25,9 @@ using System.IO;
 
 using AgateLib;
 using AgateLib.DisplayLib;
+using AgateLib.DisplayLib.Shaders;
 using AgateLib.Geometry;
-using AgateLib.Sprites.Old;
+using AgateLib.Sprites;
 using AgateLib.InputLib;
 using AgateLib.AudioLib;
 
@@ -37,7 +38,6 @@ class BBX
     const float maxPaddleImbueV = 1000.0f;
     const float minPaddleImbueV = 200.0f;
     
-    LightManager lights = new LightManager();
     bool doLighting = true;
 
     public BBX()
@@ -285,7 +285,7 @@ class BBX
                 return 0;
 
             if (Display.Caps.IsHardwareAccelerated == false ||
-                Display.Caps.SupportsLighting == false)
+                AgateBuiltInShaders.Lighting2D == null)
                 doLighting = false;
 
             bool fulls = true;
@@ -452,7 +452,7 @@ class BBX
 
             foreach (KeyValuePair<Point, string> kvp in editorState.Menu)
             {
-                Rectangle rect = new Rectangle(kvp.Key, img.font.StringDisplaySize(kvp.Value));
+                Rectangle rect = new Rectangle(kvp.Key, img.font.MeasureString(kvp.Value));
 
                 if (rect.Height > 16)
                     rect.Height = 16;
@@ -502,7 +502,7 @@ class BBX
             {
                 vsync = !vsync;
 
-                Display.VSync = vsync;
+                Display.RenderState.WaitForVerticalBlank = vsync;
             }
             if (mousex > 100 - 20 && mousex < 500 && mousey > 280 && mousey < 320)
             {
@@ -612,7 +612,7 @@ class BBX
             resetPowerups = true;
         }
 
-        lights.Ambient = w.light;
+		AgateBuiltInShaders.Lighting2D.AmbientLight = w.light;
 
         file = "lvls/" + worlds[world].lvls[level] + ".lvl";
 
@@ -702,29 +702,43 @@ class BBX
 
         Display.Clear(Color.FromArgb(128, 0, 0, 128));
 
-        //lights.Ambient = Color.FromArgb(25, 25, 25);
-        lights.Clear();
+		var shader = AgateBuiltInShaders.Lighting2D;
 
-        for (int i = 0; i < balls.Count && i < Display.Caps.MaxLights; i++)
-        {
+		while (shader.Lights.Count > balls.Count)
+			shader.Lights.RemoveAt(shader.Lights.Count-1);
+
+        for (int i = 0; i < balls.Count; i++)
+		{
+			Light light;
+
+			if (i < shader.Lights.Count)
+				light = shader.Lights[i];
+			else
+			{
+				light = new Light();
+				shader.Lights.Add(light);
+			}
+
             if (balls[i].fireball)
             {
-                lights.AddPointLight(new Vector3(
-                    balls[i].ballx, balls[i].bally, -1), Color.FromArgb(255, 255, 0), Color.FromArgb(64, 32, 0));
+				light.Position = new Vector3(balls[i].ballx, balls[i].bally, -1);
+				light.DiffuseColor = Color.FromArgb(255, 255, 0);
+				light.AmbientColor = Color.FromArgb(64, 32, 0);
 
-                lights[i].AttenuationConstant = 0.01f;
-                lights[i].AttenuationLinear = 0.01f;
-                lights[i].AttenuationQuadratic = 0.000001f;
-                
+                light.AttenuationConstant = 0.01f;
+                light.AttenuationLinear = 0.005f;
+                light.AttenuationQuadratic = 0.000001f;
+
             }
             else
             {
-                lights.AddPointLight(new Vector3(
-                    balls[i].ballx, balls[i].bally, -1), Color.FromArgb(200, 200, 200));
+				light.Position = new Vector3(balls[i].ballx, balls[i].bally, -1);
+				light.DiffuseColor = Color.FromArgb(200, 200, 200);
+				light.AmbientColor = Color.Black;
 
-                lights[i].AttenuationConstant = 0.01f;
-                lights[i].AttenuationLinear = 0;
-                lights[i].AttenuationQuadratic = 0.00001f;
+                light.AttenuationConstant = 0.01f;
+                light.AttenuationLinear = 0;
+                light.AttenuationQuadratic = 0.00001f;
                 
             }
         }
@@ -739,7 +753,7 @@ class BBX
 
         if (doLighting)
         {
-            lights.DoLighting();
+			shader.Activate();
         }
 
         // Draw blocks and Update their animations...
@@ -755,7 +769,7 @@ class BBX
 
         if (doLighting)
         {
-            Display.DisableLighting();
+			AgateBuiltInShaders.Basic2DShader.Activate();
         }
 
         // Draw paddle, other stuff, and lastly the balls.
@@ -1631,6 +1645,7 @@ class BBX
         {
             Display.BeginFrame();
 
+			img.largeFont.SetScale(0.8, 0.8);
             median = (int)Timing.TotalMilliseconds - start;
 
             Display.Clear(Color.White);
@@ -4010,7 +4025,7 @@ class BBX
         // draw menu
         foreach (KeyValuePair<Point, string> kvp in editorState.Menu)
         {
-            Rectangle rect = new Rectangle(kvp.Key, img.font.StringDisplaySize(kvp.Value));
+            Rectangle rect = new Rectangle(kvp.Key, img.font.MeasureString(kvp.Value));
 
             if (rect.Height > 16)
                 rect.Height = 16;
@@ -4074,7 +4089,6 @@ class BBX
 
         img.arrow.Color = Color.White;
 
-        lights.Ambient = Color.White;
         editorState.brush = 'r';
 
         while (Keyboard.Keys[KeyCode.Escape] == false && Display.CurrentWindow.IsClosed == false)
@@ -4325,6 +4339,16 @@ class BBX
         {
             // highscores file isn't there.. just return
             // and it will be saved.
+			highscores.Add(new CHighscore("Kanato", 500000));
+			highscores.Add(new CHighscore("Skel1", 400000));
+			highscores.Add(new CHighscore("Alison", 300000));
+			highscores.Add(new CHighscore("Dave", 200000));
+			highscores.Add(new CHighscore("John", 100000));
+			highscores.Add(new CHighscore("Larry", 50000));
+			highscores.Add(new CHighscore("Robert", 25000));
+			highscores.Add(new CHighscore("Brant", 10000));
+			highscores.Add(new CHighscore("Alexis", 5000));
+
             return;
         }
 

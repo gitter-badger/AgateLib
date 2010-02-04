@@ -18,47 +18,93 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Reflection;
 
 namespace AgateLib.Drivers
 {
-    class AgateSandBoxLoader : MarshalByRefObject
-    {
-        public AgateDriverInfo[] ReportDrivers(string file)
-        {
-            List<AgateDriverInfo> retval = new List<AgateDriverInfo>();
-            Assembly ass;
+	class AgateSandBoxLoader : MarshalByRefObject
+	{
+		public AgateDriverInfo[] ReportDrivers(string file)
+		{
+			List<AgateDriverInfo> retval = new List<AgateDriverInfo>();
+			Assembly ass;
 
-            try
-            {
-                ass = Assembly.LoadFrom(file);
-            }
-            catch (BadImageFormatException)
-            {
-                System.Diagnostics.Debug.Print("Could not load the file {0}.  Is it a CLR assembly?", file);
-                return retval.ToArray();
-            }
+			try
+			{
+				ass = Assembly.LoadFrom(file);
+			}
+			catch (BadImageFormatException)
+			{
+				System.Diagnostics.Trace.WriteLine(string.Format(
+					"Could not load the file {0}.  Is it a CLR assembly?", file));
+				return retval.ToArray();
+			}
 
-            foreach (Type t in ass.GetTypes())
-            {
-                if (t.IsAbstract)
-                    continue;
-                if (typeof(AgateDriverReporter).IsAssignableFrom(t) == false)
-                    continue;
+			Type[] types;
 
-                AgateDriverReporter reporter = (AgateDriverReporter)Activator.CreateInstance(t);
+			try
+			{
+				types = ass.GetTypes();
+			}
+			catch (ReflectionTypeLoadException e)
+			{
+				string message = string.Format(
+					"Caught ReflectionTypeLoadException in {0}.", file);
 
-                foreach (AgateDriverInfo info in reporter.ReportDrivers())
-                {
-                    info.AssemblyFile = file;
-                    info.AssemblyName = ass.FullName;
+				foreach (var ex in e.LoaderExceptions)
+				{
+					message += Environment.NewLine;
+					message += ex.Message;
+				}
 
-                    retval.Add(info);
-                }
-            }
+				message += Environment.NewLine +
+					"This is probably a sign that the build of the file " + file +
+					" does not match the build of AgateLib.dll.";
 
-            return retval.ToArray();
-        }
-    }
+				Trace.WriteLine(message);
+
+				return retval.ToArray();
+			}
+			catch (Exception e)
+			{
+				System.Diagnostics.Trace.WriteLine(string.Format(
+					"Could not load types in the file {0}.  Check to make sure its dependencies are available.  " +
+					"Caught exception {1}.  {2}", file, e.GetType().ToString(), e.Message));
+
+				return retval.ToArray();
+			}
+
+			foreach (Type t in types)
+			{
+				if (t.IsAbstract)
+					continue;
+				if (typeof(AgateDriverReporter).IsAssignableFrom(t) == false)
+					continue;
+
+				AgateDriverReporter reporter = (AgateDriverReporter)Activator.CreateInstance(t);
+
+				try
+				{
+					foreach (AgateDriverInfo info in reporter.ReportDrivers())
+					{
+						info.AssemblyFile = file;
+						info.AssemblyName = ass.FullName;
+
+						retval.Add(info);
+					}
+				}
+				catch (Exception e)
+				{
+					Trace.WriteLine(string.Format(
+						"The driver reporter in {0} encountered an error." + Environment.NewLine +
+						"Caught exception {1}." + Environment.NewLine +
+						"{2}", file, e.GetType().Name, e.Message));
+				}
+			}
+
+			return retval.ToArray();
+		}
+	}
 }

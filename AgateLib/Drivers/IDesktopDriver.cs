@@ -22,24 +22,26 @@ using System.Text;
 
 namespace AgateLib.Drivers
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public interface IDesktopDriver
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        IUserSetSystems CreateUserSetSystems();
+	/// <summary>
+	/// An interface which provides a basic user interface for things which can't 
+	/// be done with the driver system.
+	/// </summary>
+	public interface IDesktopDriver
+	{
+		/// <summary>
+		/// Creates an object which provides an interface to ask the user which drivers
+		/// to use.
+		/// </summary>
+		/// <returns></returns>
+		IUserSetSystems CreateUserSetSystems();
 
-        /// <summary>
-        /// Shows an error dialog using the operating system's methods.
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="e">The exception causing the error.  This parameter may be null, 
-        /// and it is important that the implementation does not choke on a null value for e.</param>
-        /// <param name="level"></param>
-        void ShowErrorDialog(string message, Exception e, ErrorLevel level);
-    }
+		/// <summary>
+		/// Shows an error dialog using the operating system's methods.
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="e">The exception causing the error.  This parameter may be null, 
+		/// and it is important that the implementation does not choke on a null value for e.</param>
+		/// <param name="level"></param>
+		void ShowErrorDialog(string message, Exception e, ErrorLevel level);
+	}
 }

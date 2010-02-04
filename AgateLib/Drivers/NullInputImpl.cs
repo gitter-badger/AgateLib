@@ -21,31 +21,30 @@ using System.Collections.Generic;
 using System.Text;
 
 using AgateLib.Drivers;
-using AgateLib.ImplementationBase;
+using AgateLib.InputLib.ImplementationBase;
 
 namespace AgateLib.Drivers
 {
-    class NullInputImpl : InputImpl 
-    {
+	class NullInputImpl : InputImpl
+	{
+		public override void Initialize()
+		{
+			Report("No input driver found.  Joysticks will not work.");
+		}
 
-        public override void Initialize()
-        {
-            Report("No input driver found.  Joysticks will not work.");            
-        }
+		public override void Dispose()
+		{
 
-        public override void Dispose()
-        {
-            
-        }
+		}
 
-        public override int JoystickCount
-        {
-            get { return 0; }
-        }
+		public override int JoystickCount
+		{
+			get { return 0; }
+		}
 
-        public override IEnumerable<JoystickImpl> CreateJoysticks()
-        {
-            return new List<JoystickImpl>();
-        }
-    }
+		public override IEnumerable<JoystickImpl> CreateJoysticks()
+		{
+			return new List<JoystickImpl>();
+		}
+	}
 }

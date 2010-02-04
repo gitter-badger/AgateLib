@@ -19,180 +19,193 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using AgateLib.Serialization.Xle;
 
 namespace AgateLib.Geometry
 {
-    /// <summary>
-    /// Replacement for System.Drawing.PointF structure.
-    /// </summary>
-    [Serializable]
-    public struct PointF
-    {
-        float x, y;
+	/// <summary>
+	/// Replacement for System.Drawing.PointF structure.
+	/// </summary>
+	[Serializable]
+	public struct PointF : IXleSerializable 
+	{
+		float x, y;
 
-        #region --- Construction ---
+		#region --- Construction ---
 
-        /// <summary>
-        /// Constructs a PointF object.
-        /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        public PointF(float x, float y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-        /// <summary>
-        /// Constructs a PointF object.
-        /// </summary>
-        /// <param name="pt"></param>
-        public PointF(PointF pt)
-        {
-            this.x = pt.x;
-            this.y = pt.y;
-        }
-        /// <summary>
-        /// Constructs a PointF object.
-        /// </summary>
-        /// <param name="size"></param>
-        public PointF(SizeF size)
-        {
-            this.x = size.Width;
-            this.y = size.Height;
-        }
-        
-        #endregion
-        #region --- Public Properties ---
-        
-        /// <summary>
-        /// Gets or sets the X value.
-        /// </summary>
-        public float X
-        {
-            get { return x; }
-            set { x = value; }
-        }
-        /// <summary>
-        /// Gets or sets the Y value.
-        /// </summary>
-        public float Y
-        {
-            get { return y; }
-            set { y = value; }
-        }
-        
-        /// <summary>
-        /// Returns true if X and Y are zero.
-        /// </summary>
-        public bool IsEmpty
-        {
-            get { return x == 0 && y == 0; }
-        }
-
-        #endregion
-
-        #region --- Operator Overloads ---
-
-        /// <summary>
-        /// Equality comparison test.
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        public static bool operator ==(PointF a, PointF b)
-        {
-            return a.Equals(b);
-        }
-        /// <summary>
-        /// Inequality comparison test.
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        public static bool operator !=(PointF a, PointF b)
-        {
-            return !a.Equals(b);
-        }
-
-        /// <summary>
-        /// Explicitly converts a point to a pointf structure.
-        /// </summary>
-        /// <param name="a"></param>
-        /// <returns></returns>
-        public static explicit operator Point(PointF a)
-        {
-            return new Point((int)a.X, (int)a.Y);
-        }
-
-        #endregion
+		/// <summary>
+		/// Constructs a PointF object.
+		/// </summary>
+		/// <param name="x"></param>
+		/// <param name="y"></param>
+		public PointF(float x, float y)
+		{
+			this.x = x;
+			this.y = y;
+		}
+		/// <summary>
+		/// Constructs a PointF object.
+		/// </summary>
+		/// <param name="pt"></param>
+		public PointF(PointF pt)
+		{
+			this.x = pt.x;
+			this.y = pt.y;
+		}
+		/// <summary>
+		/// Constructs a PointF object.
+		/// </summary>
+		/// <param name="size"></param>
+		public PointF(SizeF size)
+		{
+			this.x = size.Width;
+			this.y = size.Height;
+		}
 
 
-        #region --- Object Overrides ---
+		void IXleSerializable.WriteData(XleSerializationInfo info)
+		{
+			info.Write("X", X, true);
+			info.Write("Y", Y, true);
+		}
+		void IXleSerializable.ReadData(XleSerializationInfo info)
+		{
+			X = info.ReadFloat("X");
+			Y = info.ReadFloat("Y");
+		}
 
-        /// <summary>
-        /// Creates a string representing this object.
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.CurrentCulture,
-                "{0}X={1},Y={2}{3}", "{", x, y, "}");
-        }
-        /// <summary>
-        /// Gets a hash code.
-        /// </summary>
-        /// <returns></returns>
-        public override int GetHashCode()
-        {
-            return x.GetHashCode() + y.GetHashCode();
-        }
-        /// <summary>
-        /// Equality test.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is PointF)
-                return Equals((PointF)obj);
-            else
-                return base.Equals(obj);
-        }
-        /// <summary>
-        /// Equality test.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public bool Equals(PointF obj)
-        {
-            if (x == obj.x && y == obj.y)
-                return true;
-            else
-                return false;
-        }
+		#endregion
+		#region --- Public Properties ---
 
-        #endregion
+		/// <summary>
+		/// Gets or sets the X value.
+		/// </summary>
+		public float X
+		{
+			get { return x; }
+			set { x = value; }
+		}
+		/// <summary>
+		/// Gets or sets the Y value.
+		/// </summary>
+		public float Y
+		{
+			get { return y; }
+			set { y = value; }
+		}
 
-        #region --- Static Methods and Fields ---
+		/// <summary>
+		/// Returns true if X and Y are zero.
+		/// </summary>
+		public bool IsEmpty
+		{
+			get { return x == 0 && y == 0; }
+		}
 
-        /// <summary>
-        /// Empty PointF.
-        /// </summary>
-        public static readonly PointF Empty = new PointF(0, 0);
+		#endregion
 
-        /// <summary>
-        /// Adds the specified SizeF structure to the specified PointF structure
-        /// and returns the result as a new PointF structure.
-        /// </summary>
-        /// <param name="pt"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public static PointF Add(PointF pt, SizeF size)
-        {
-            return new PointF(pt.x + size.Width, pt.y + size.Height);
-        }
+		#region --- Operator Overloads ---
 
-        #endregion
+		/// <summary>
+		/// Equality comparison test.
+		/// </summary>
+		/// <param name="a"></param>
+		/// <param name="b"></param>
+		/// <returns></returns>
+		public static bool operator ==(PointF a, PointF b)
+		{
+			return a.Equals(b);
+		}
+		/// <summary>
+		/// Inequality comparison test.
+		/// </summary>
+		/// <param name="a"></param>
+		/// <param name="b"></param>
+		/// <returns></returns>
+		public static bool operator !=(PointF a, PointF b)
+		{
+			return !a.Equals(b);
+		}
 
-    }
+		/// <summary>
+		/// Explicitly converts a point to a pointf structure.
+		/// </summary>
+		/// <param name="a"></param>
+		/// <returns></returns>
+		public static explicit operator Point(PointF a)
+		{
+			return new Point((int)a.X, (int)a.Y);
+		}
+
+		#endregion
+
+
+		#region --- Object Overrides ---
+
+		/// <summary>
+		/// Creates a string representing this object.
+		/// </summary>
+		/// <returns></returns>
+		public override string ToString()
+		{
+			return string.Format(System.Globalization.CultureInfo.CurrentCulture,
+				"{0}X={1},Y={2}{3}", "{", x, y, "}");
+		}
+		/// <summary>
+		/// Gets a hash code.
+		/// </summary>
+		/// <returns></returns>
+		public override int GetHashCode()
+		{
+			return x.GetHashCode() + y.GetHashCode();
+		}
+		/// <summary>
+		/// Equality test.
+		/// </summary>
+		/// <param name="obj"></param>
+		/// <returns></returns>
+		public override bool Equals(object obj)
+		{
+			if (obj is PointF)
+				return Equals((PointF)obj);
+			else
+				return base.Equals(obj);
+		}
+		/// <summary>
+		/// Equality test.
+		/// </summary>
+		/// <param name="obj"></param>
+		/// <returns></returns>
+		public bool Equals(PointF obj)
+		{
+			if (x == obj.x && y == obj.y)
+				return true;
+			else
+				return false;
+		}
+
+		#endregion
+
+		#region --- Static Methods and Fields ---
+
+		/// <summary>
+		/// Empty PointF.
+		/// </summary>
+		public static readonly PointF Empty = new PointF(0, 0);
+
+		/// <summary>
+		/// Adds the specified SizeF structure to the specified PointF structure
+		/// and returns the result as a new PointF structure.
+		/// </summary>
+		/// <param name="pt"></param>
+		/// <param name="size"></param>
+		/// <returns></returns>
+		public static PointF Add(PointF pt, SizeF size)
+		{
+			return new PointF(pt.x + size.Width, pt.y + size.Height);
+		}
+
+		#endregion
+
+	}
 }

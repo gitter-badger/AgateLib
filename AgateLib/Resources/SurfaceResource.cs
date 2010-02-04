@@ -24,64 +24,70 @@ using AgateLib.Geometry;
 
 namespace AgateLib.Resources
 {
-    /// <summary>
-    /// Resource which loads a surface. <br/>
-    /// XML Attributes:<br/> 
-    ///   string name, string filename
-    /// </summary>
-    public sealed class SurfaceResource : AgateResource 
-    {
-        string mFilename;
+	/// <summary>
+	/// Resource which loads a surface. <br/>
+	/// XML Attributes:<br/> 
+	///   string name, string filename
+	/// </summary>
+	public sealed class SurfaceResource : AgateResource
+	{
+		string mFilename;
 
-        /// <summary>
-        /// Gets or sets the filename for the surface to be created from.
-        /// </summary>
-        public string Filename { get { return mFilename; } set { mFilename = value; } }
+		/// <summary>
+		/// Gets or sets the filename for the surface to be created from.
+		/// </summary>
+		public string Filename { get { return mFilename; } set { mFilename = value; } }
 
-        /// <summary>
-        /// Constructs a SurfaceResource object.
-        /// </summary>
-        /// <param name="name"></param>
-        public SurfaceResource(string name)
-            : base(name)
-        {
-        }
+		/// <summary>
+		/// Constructs a SurfaceResource object.
+		/// </summary>
+		/// <param name="name"></param>
+		public SurfaceResource(string name)
+			: base(name)
+		{
+		}
 
-        private SurfaceResource(string name, string filename)
-            : base(name)
-        {
-            Filename = filename;
-        }
+		private SurfaceResource(string name, string filename)
+			: base(name)
+		{
+			Filename = filename;
+		}
 
-        internal SurfaceResource(XmlNode node, string version)
-            : base(string.Empty)
-        {
-            switch (version)
-            {
-                case "0.3.0":
-                    Name = node.Attributes["name"].Value;
-                    Filename = node.Attributes["filename"].Value;
+		internal SurfaceResource(XmlNode node, string version)
+			: base(string.Empty)
+		{
+			switch (version)
+			{
+				case "0.3.1":
+				case "0.3.0":
+					Name = node.Attributes["name"].Value;
+					Filename = node.Attributes["filename"].Value;
 
-                    break;
-            }
-        }
-        internal override void BuildNodes(System.Xml.XmlElement parent, System.Xml.XmlDocument doc)
-        {
-            XmlElement el = doc.CreateElement("Surface");
+					break;
 
-            XmlHelper.AppendAttribute(el, doc, "name", Name);
-            XmlHelper.AppendAttribute(el, doc, "filename", Filename);
+				default:
+					throw new AgateResourceException(
+						"Reading Surface data for the version " + version + 
+						" is not supported yet.  Check the version string in your resource file.");
+			}
+		}
+		internal override void BuildNodes(System.Xml.XmlElement parent, System.Xml.XmlDocument doc)
+		{
+			XmlElement el = doc.CreateElement("Surface");
 
-            parent.AppendChild(el);
-        }
+			XmlHelper.AppendAttribute(el, doc, "name", Name);
+			XmlHelper.AppendAttribute(el, doc, "filename", Filename);
 
-        /// <summary>
-        /// Clones the SurfaceResource object.
-        /// </summary>
-        /// <returns></returns>
-        protected override AgateResource Clone()
-        {
-            return new SurfaceResource(Name, Filename);
-        }
-    }
+			parent.AppendChild(el);
+		}
+
+		/// <summary>
+		/// Clones the SurfaceResource object.
+		/// </summary>
+		/// <returns></returns>
+		protected override AgateResource Clone()
+		{
+			return new SurfaceResource(Name, Filename);
+		}
+	}
 }

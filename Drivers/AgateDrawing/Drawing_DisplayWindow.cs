@@ -22,300 +22,305 @@ using System.Drawing;
 using System.Text;
 using System.Reflection;
 using System.Windows.Forms;
-
-using AgateLib.ImplementationBase;
+using AgateLib;
+using AgateLib.DisplayLib;
+using AgateLib.DisplayLib.ImplementationBase;
 using AgateLib.InputLib;
 using AgateLib.WinForms;
+using Geometry = AgateLib.Geometry;
 
-namespace AgateLib.DisplayLib.SystemDrawing
+namespace AgateDrawing
 {
-    class Drawing_DisplayWindow : DisplayWindowImpl, Drawing_IRenderTarget 
-    {
-        Form frm;
-        Control mRenderTarget;
-        bool mIsClosed = false;
+	class Drawing_DisplayWindow : DisplayWindowImpl
+	{
+		Form frm;
+		Control mRenderTarget;
+		bool mIsClosed = false;
+		Drawing_FrameBuffer mFrameBuffer;
 
-        Icon mIcon;
-        Bitmap mBackBuffer;
+		Icon mIcon;
+		Bitmap mBackBuffer;
 
-        public Drawing_DisplayWindow(CreateWindowParams windowParams)
-        {
-            if (windowParams.RenderToControl == true)
-            {
-                if (typeof(Control).IsAssignableFrom(windowParams.RenderTarget.GetType()) == false)
-                    throw new AgateException(string.Format("The specified render target is of type {0}, " +
-                        "which does not derive from System.Windows.Forms.Control.", windowParams.RenderTarget.GetType().Name));
+		public Drawing_DisplayWindow(CreateWindowParams windowParams)
+		{
+			if (windowParams.RenderToControl == true)
+			{
+				if (typeof(Control).IsAssignableFrom(windowParams.RenderTarget.GetType()) == false)
+					throw new AgateException(string.Format("The specified render target is of type {0}, " +
+						"which does not derive from System.Windows.Forms.Control.", windowParams.RenderTarget.GetType().Name));
 
-                mRenderTarget = (Control)windowParams.RenderTarget;
+				mRenderTarget = (Control)windowParams.RenderTarget;
 
-                AttachEvents();
+				AttachEvents();
 
-                OnResize();
-            }
-            else
-            {
-                WinForms.FormUtil.InitializeWindowsForm(out frm, out mRenderTarget, windowParams.WindowPosition, windowParams.Title,
-                    windowParams.Width, windowParams.Height, windowParams.IsFullScreen, windowParams.IsResizable, 
-                    windowParams.HasFrame);
+				OnResize();
+			}
+			else
+			{
+				AgateLib.WinForms.FormUtil.InitializeWindowsForm(out frm, out mRenderTarget, windowParams.WindowPosition, windowParams.Title,
+					windowParams.Width, windowParams.Height, windowParams.IsFullScreen, windowParams.IsResizable,
+					windowParams.HasFrame);
 
-                if (string.IsNullOrEmpty(windowParams.IconFile) == false)
-                {
-                    mIcon = new Icon(windowParams.IconFile);
-                    frm.Icon = mIcon;
-                }
+				if (string.IsNullOrEmpty(windowParams.IconFile) == false)
+				{
+					mIcon = new Icon(windowParams.IconFile);
+					frm.Icon = mIcon;
+				}
 
-                // finally, show the form
-                frm.Show();
+				// finally, show the form
+				frm.Show();
 
-                AttachEvents();
+				AttachEvents();
 
-                // and create the back buffer
-                OnResize();
-            }
-        }
-        public Drawing_DisplayWindow(Control renderTarget)
-        {
-            
-        }
+				// and create the back buffer
+				OnResize();
+			}
 
-        private void AttachEvents()
-        {
-            mRenderTarget.Resize += new EventHandler(frm_Resize);
-            mRenderTarget.Paint += new PaintEventHandler(frm_Paint);
+			mFrameBuffer = new Drawing_FrameBuffer(mBackBuffer);
+			mFrameBuffer.EndRenderEvent += new EventHandler(mFrameBuffer_EndRenderEvent);
+		}
 
-            mRenderTarget.MouseMove += new MouseEventHandler(pct_MouseMove);
-            mRenderTarget.MouseDown += new MouseEventHandler(pct_MouseDown);
-            mRenderTarget.MouseUp += new MouseEventHandler(pct_MouseUp);
-            //mRenderTarget.MouseDoubleClick += new MouseEventHandler(pct_MouseDoubleClick);
+		void mFrameBuffer_EndRenderEvent(object sender, EventArgs e)
+		{
+			Graphics g = RenderTarget.CreateGraphics();
 
-            mRenderTarget.Disposed += new EventHandler(renderTarget_Disposed);
+			g.DrawImage(BackBuffer, new Rectangle(new Point(0, 0), BackBuffer.Size));
+			g.Dispose();
+		}
 
-            System.Windows.Forms.Form form = (mRenderTarget.TopLevelControl as System.Windows.Forms.Form);
+		public override FrameBufferImpl FrameBuffer
+		{
+			get { return mFrameBuffer; }
+		}
 
-            if (form == null)
-            {
-                throw new AgateException("The control to be used as a render target has not been added to a Form yet." +
-                    "Check to make sure that you are creating the DisplayWindow after all controls are added to the Form.  Do not create a DisplayWindow in a constructor for a UserControl, for example.");
-            }
+		private void AttachEvents()
+		{
+			mRenderTarget.Resize += new EventHandler(frm_Resize);
+			mRenderTarget.Paint += new PaintEventHandler(frm_Paint);
 
-            form.KeyPreview = true;
-            form.KeyDown += new System.Windows.Forms.KeyEventHandler(form_KeyDown);
-            form.KeyUp += new System.Windows.Forms.KeyEventHandler(form_KeyUp);
+			mRenderTarget.MouseMove += new MouseEventHandler(pct_MouseMove);
+			mRenderTarget.MouseDown += new MouseEventHandler(pct_MouseDown);
+			mRenderTarget.MouseUp += new MouseEventHandler(pct_MouseUp);
+			//mRenderTarget.MouseDoubleClick += new MouseEventHandler(pct_MouseDoubleClick);
 
-            // fuck, it seems that FormClosing had a different name in .NET 1.1, which is
-            // the version of windows that Mono implements.  
-            // So here's an ugly System.Reflection hack around it.
-            {
-                EventInfo formClosing = GetFormEvent("FormClosing", "Closing");
-                MethodInfo method = this.GetType().GetMethod("form_FormClosing");
+			mRenderTarget.Disposed += new EventHandler(renderTarget_Disposed);
 
-                Delegate d = Delegate.CreateDelegate(formClosing.EventHandlerType, this, method);
+			System.Windows.Forms.Form form = (mRenderTarget.TopLevelControl as System.Windows.Forms.Form);
 
-                formClosing.AddEventHandler(form,d );
-            }
-            {
-                EventInfo formClosed = GetFormEvent("FormClosed", "Closed");
-                MethodInfo method = this.GetType().GetMethod("form_FormClosed");
+			if (form == null)
+			{
+				throw new AgateException("The control to be used as a render target has not been added to a Form yet." +
+					"Check to make sure that you are creating the DisplayWindow after all controls are added to the Form.  Do not create a DisplayWindow in a constructor for a UserControl, for example.");
+			}
 
-                Delegate d = Delegate.CreateDelegate(formClosed.EventHandlerType, this, method);
+			form.KeyPreview = true;
+			form.KeyDown += new System.Windows.Forms.KeyEventHandler(form_KeyDown);
+			form.KeyUp += new System.Windows.Forms.KeyEventHandler(form_KeyUp);
 
-                formClosed.AddEventHandler(form, d);
-            }
-        }
+			// fuck, it seems that FormClosing had a different name in .NET 1.1, which is
+			// the version of windows that Mono implements.  
+			// So here's an ugly System.Reflection hack around it.
+			{
+				EventInfo formClosing = GetFormEvent("FormClosing", "Closing");
+				MethodInfo method = this.GetType().GetMethod("form_FormClosing");
 
-        private EventInfo GetFormEvent(params string[] eventNames)
-        {
-            Type formType = typeof(System.Windows.Forms.Form);
+				Delegate d = Delegate.CreateDelegate(formClosing.EventHandlerType, this, method);
 
-            foreach (string name in eventNames)
-            {
-                EventInfo evt = formType.GetEvent(name);
+				formClosing.AddEventHandler(form, d);
+			}
+			{
+				EventInfo formClosed = GetFormEvent("FormClosed", "Closed");
+				MethodInfo method = this.GetType().GetMethod("form_FormClosed");
 
-                if (evt != null)
-                    return evt;
-            }
+				Delegate d = Delegate.CreateDelegate(formClosed.EventHandlerType, this, method);
 
-            return null;
-        }
+				formClosed.AddEventHandler(form, d);
+			}
+		}
 
+		private EventInfo GetFormEvent(params string[] eventNames)
+		{
+			Type formType = typeof(System.Windows.Forms.Form);
 
-        Mouse.MouseButtons GetButtons(MouseButtons buttons)
-        {
-            Mouse.MouseButtons retval = Mouse.MouseButtons.None;
+			foreach (string name in eventNames)
+			{
+				EventInfo evt = formType.GetEvent(name);
 
-            if ((buttons & MouseButtons.Left) != 0)
-                retval = Mouse.MouseButtons.Primary;
-            if ((buttons & MouseButtons.Right) != 0)
-                retval = Mouse.MouseButtons.Secondary;
-            if ((buttons & MouseButtons.Middle) != 0)
-                retval = Mouse.MouseButtons.Middle;
-            if ((buttons & MouseButtons.XButton1) != 0)
-                retval = Mouse.MouseButtons.ExtraButton1;
-            if ((buttons & MouseButtons.XButton2) != 0)
-                retval = Mouse.MouseButtons.ExtraButton2;
+				if (evt != null)
+					return evt;
+			}
 
-            return retval;
-        }
-
-        public void form_FormClosed(object sender, EventArgs e)
-        {
-            mIsClosed = true;
-        }
-        public void form_FormClosing(object sender, EventArgs e)
-        {
-
-        }
-        void form_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
-        {
-            Keyboard.Keys[FormUtil.TransformWinFormsKey(e.KeyCode)] = false;
-        }
-        void form_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
-        {
-            Keyboard.Keys[FormUtil.TransformWinFormsKey(e.KeyCode)] = true;
-        }
-
-        void pct_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            Mouse.MouseButtons btn = GetButtons(e.Button);
-
-            Mouse.OnMouseDoubleClick(btn);
-        }
-
-        void pct_MouseUp(object sender, MouseEventArgs e)
-        {
-            Mouse.MouseButtons btn = GetButtons(e.Button);
-
-            Mouse.Buttons[btn] = false;
-        }
-
-        void pct_MouseDown(object sender, MouseEventArgs e)
-        {
-            Mouse.MouseButtons btn = GetButtons(e.Button);
-
-            Mouse.Buttons[btn] = true;
-        }
-
-        void pct_MouseMove(object sender, MouseEventArgs e)
-        {
-            Mouse.OnMouseMove();
-        }
-
-        void renderTarget_Disposed(object sender, EventArgs e)
-        {
-            mIsClosed = true;
-        }
-
-        public override void Dispose()
-        {
-            if (frm != null)
-                frm.Dispose();
-
-            mIsClosed = true;
-        }
-
-        void frm_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-        void frm_Resize(object sender, EventArgs e)
-        {
-            OnResize();
-        }
-
-        private void OnResize()
-        {
-            if (mRenderTarget.ClientSize.Width == 0 || mRenderTarget.ClientSize.Height == 0)
-                return;
-
-            mBackBuffer = new Bitmap(mRenderTarget.ClientSize.Width, mRenderTarget.ClientSize.Height);
-        }
-
-        public Control RenderTarget
-        {
-            get
-            {
-                return mRenderTarget;
-            }
-        }
-        public Bitmap BackBuffer
-        {
-            get { return mBackBuffer; }
-        }
-
-        public override bool IsClosed
-        {
-            get { return mIsClosed; }
-        }
-
-        public override Geometry.Size Size
-        {
-            get
-            {
-                return Interop.Convert(mRenderTarget.ClientSize);
-            }
-            set
-            {
-                if (frm != null)
-                    frm.ClientSize = Interop.Convert(value);
-            }
-        }
-
-        public override Geometry.Point MousePosition
-        {
-            get
-            {
-                return Interop.Convert(mRenderTarget.PointToClient(Cursor.Position));
-            }
-            set
-            {
-                Cursor.Position = mRenderTarget.PointToScreen(Interop.Convert(value));
-            }
-        }
-
-        public override bool IsFullScreen
-        {
-            get { return false; }
-        }
-
-        public override void BeginRender()
-        {
-        }
-
-        public override void EndRender()
-        {
-            Graphics g = RenderTarget.CreateGraphics();
-
-            g.DrawImage(BackBuffer, new Rectangle(new Point(0, 0), BackBuffer.Size));
-            g.Dispose();
-        }
+			return null;
+		}
 
 
-        public override string Title
-        {
-            get
-            {
-                if (frm != null)
-                    return frm.Text;
-                else
-                    return "";
-            }
-            set
-            {
-                if (frm != null)
-                    frm.Text = value;                    
-            }
-        }
+		Mouse.MouseButtons GetButtons(MouseButtons buttons)
+		{
+			Mouse.MouseButtons retval = Mouse.MouseButtons.None;
 
-        public override void SetWindowed()
-        {
-        }
+			if ((buttons & MouseButtons.Left) != 0)
+				retval = Mouse.MouseButtons.Primary;
+			if ((buttons & MouseButtons.Right) != 0)
+				retval = Mouse.MouseButtons.Secondary;
+			if ((buttons & MouseButtons.Middle) != 0)
+				retval = Mouse.MouseButtons.Middle;
+			if ((buttons & MouseButtons.XButton1) != 0)
+				retval = Mouse.MouseButtons.ExtraButton1;
+			if ((buttons & MouseButtons.XButton2) != 0)
+				retval = Mouse.MouseButtons.ExtraButton2;
 
-        public override void SetFullScreen()
-        {
-        }
+			return retval;
+		}
 
-        public override void SetFullScreen(int width, int height, int bpp)
-        {
-        }
-    }
+		public void form_FormClosed(object sender, EventArgs e)
+		{
+			mIsClosed = true;
+		}
+		public void form_FormClosing(object sender, EventArgs e)
+		{
+
+		}
+		void form_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+		{
+			Keyboard.Keys[FormUtil.TransformWinFormsKey(e.KeyCode)] = false;
+		}
+		void form_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+		{
+			Keyboard.Keys[FormUtil.TransformWinFormsKey(e.KeyCode)] = true;
+		}
+
+		void pct_MouseDoubleClick(object sender, MouseEventArgs e)
+		{
+			Mouse.MouseButtons btn = GetButtons(e.Button);
+
+			Mouse.OnMouseDoubleClick(btn);
+		}
+
+		void pct_MouseUp(object sender, MouseEventArgs e)
+		{
+			Mouse.MouseButtons btn = GetButtons(e.Button);
+
+			Mouse.Buttons[btn] = false;
+		}
+
+		void pct_MouseDown(object sender, MouseEventArgs e)
+		{
+			Mouse.MouseButtons btn = GetButtons(e.Button);
+
+			Mouse.Buttons[btn] = true;
+		}
+
+		void pct_MouseMove(object sender, MouseEventArgs e)
+		{
+			Mouse.OnMouseMove();
+		}
+
+		void renderTarget_Disposed(object sender, EventArgs e)
+		{
+			mIsClosed = true;
+		}
+
+		public override void Dispose()
+		{
+			if (frm != null)
+				frm.Dispose();
+
+			mIsClosed = true;
+		}
+
+		void frm_Paint(object sender, PaintEventArgs e)
+		{
+
+		}
+		void frm_Resize(object sender, EventArgs e)
+		{
+			OnResize();
+		}
+
+		private void OnResize()
+		{
+			if (mRenderTarget.ClientSize.Width == 0 || mRenderTarget.ClientSize.Height == 0)
+				return;
+
+			mBackBuffer = new Bitmap(mRenderTarget.ClientSize.Width, mRenderTarget.ClientSize.Height);
+		}
+
+		public Control RenderTarget
+		{
+			get
+			{
+				return mRenderTarget;
+			}
+		}
+		public Bitmap BackBuffer
+		{
+			get { return mBackBuffer; }
+		}
+
+		public override bool IsClosed
+		{
+			get { return mIsClosed; }
+		}
+
+		public override Geometry.Size Size
+		{
+			get
+			{
+				return Interop.Convert(mRenderTarget.ClientSize);
+			}
+			set
+			{
+				if (frm != null)
+					frm.ClientSize = Interop.Convert(value);
+			}
+		}
+
+		public override Geometry.Point MousePosition
+		{
+			get
+			{
+				return Interop.Convert(mRenderTarget.PointToClient(Cursor.Position));
+			}
+			set
+			{
+				Cursor.Position = mRenderTarget.PointToScreen(Interop.Convert(value));
+			}
+		}
+
+		public override bool IsFullScreen
+		{
+			get { return false; }
+		}
+
+
+
+
+		public override string Title
+		{
+			get
+			{
+				if (frm != null)
+					return frm.Text;
+				else
+					return "";
+			}
+			set
+			{
+				if (frm != null)
+					frm.Text = value;
+			}
+		}
+
+		public override void SetWindowed()
+		{
+		}
+
+		public override void SetFullScreen()
+		{
+		}
+
+		public override void SetFullScreen(int width, int height, int bpp)
+		{
+		}
+	}
 }

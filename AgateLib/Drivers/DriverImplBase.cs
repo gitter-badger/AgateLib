@@ -20,31 +20,31 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AgateLib.ImplementationBase
+namespace AgateLib.Drivers
 {
-    /// <summary>
-    /// Base class all driver classes should implement.
-    /// </summary>
-    public abstract class DriverImplBase: IDisposable 
-    { 
-        /// <summary>
-        /// Initialization beyond what the constructor does.
-        /// </summary>
-        public abstract void Initialize();
-        /// <summary>
-        /// Disposes of unmanaged resources.
-        /// </summary>
-        public abstract void Dispose();
+	/// <summary>
+	/// Base class all driver classes should implement.
+	/// </summary>
+	public abstract class DriverImplBase : IDisposable
+	{
+		/// <summary>
+		/// Initialization beyond what the constructor does.
+		/// </summary>
+		public abstract void Initialize();
+		/// <summary>
+		/// Disposes of unmanaged resources.
+		/// </summary>
+		public abstract void Dispose();
 
-        /// <summary>
-        /// Called by drivers in their Initialize routine to report
-        /// which driver was instantiated.
-        /// </summary>
-        /// <param name="text"></param>
-        protected void Report(string text)
-        {
-            //Console.WriteLine(text);
-            System.Diagnostics.Trace.WriteLine(text);
-        }
-    }
+		/// <summary>
+		/// Called by drivers in their Initialize routine to report
+		/// which driver was instantiated.
+		/// </summary>
+		/// <param name="text"></param>
+		protected void Report(string text)
+		{
+			//Console.WriteLine(text);
+			System.Diagnostics.Trace.WriteLine(text);
+		}
+	}
 }

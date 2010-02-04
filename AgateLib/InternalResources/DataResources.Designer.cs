@@ -60,6 +60,20 @@ namespace AgateLib.InternalResources {
             }
         }
         
+        internal static byte[] agate_black_gui {
+            get {
+                object obj = ResourceManager.GetObject("agate_black_gui", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        internal static byte[] Fonts {
+            get {
+                object obj = ResourceManager.GetObject("Fonts", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
         internal static byte[] images {
             get {
                 object obj = ResourceManager.GetObject("images", resourceCulture);

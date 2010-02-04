@@ -19,82 +19,99 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
-
-using Tao.Sdl;
-
 using AgateLib;
-using AgateLib.ImplementationBase;
+using AgateLib.AudioLib.ImplementationBase;
+using Tao.Sdl;
 
 namespace AgateSDL.Audio
 {
-    class SDL_SoundBuffer : SoundBufferImpl 
-    {
-        IntPtr sound;
-        string tempfile;
-        double mVolume = 1.0;
+	class SDL_SoundBuffer : SoundBufferImpl
+	{
+		IntPtr sound;
+		string tempfile;
+		double mVolume = 1.0;
+		bool ownRam = false;
+		IntPtr soundPtr;
+		int samplesPerSec = 22050;
 
-        public SDL_SoundBuffer(Stream stream)
-        {
-            tempfile = AgateFileProvider.SaveStreamToTempFile(stream);
+		public SDL_SoundBuffer(Stream stream)
+		{
+			tempfile = AgateFileProvider.SaveStreamToTempFile(stream);
 
-            LoadFromFile(tempfile);
+			LoadFromFile(tempfile);
 
-            (AgateLib.AudioLib.Audio.Impl as SDL_Audio).RegisterTempFile(tempfile);
+			(AgateLib.AudioLib.Audio.Impl as SDL_Audio).RegisterTempFile(tempfile);
 
-        }
-        public SDL_SoundBuffer(string filename)
-        {
-            LoadFromFile(filename);
-        }
+		}
+		public SDL_SoundBuffer(string filename)
+		{
+			LoadFromFile(filename);
+		}
 
-        ~SDL_SoundBuffer()
-        {
-            Dispose(false);
-        }
 
-        public override void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+		~SDL_SoundBuffer()
+		{
+			Dispose(false);
+		}
 
-        private void Dispose(bool disposing)
-        {
-            SdlMixer.Mix_FreeChunk(sound);
+		public int SamplePerSec
+		{
+			get { return samplesPerSec; }
+		}
 
-            //if (string.IsNullOrEmpty(tempfile) == false)
-            //{
-            //    File.Delete(tempfile);
-            //    tempfile = "";
-            //}
-        }
-        private void LoadFromFile(string file)
-        {
-            sound = SdlMixer.Mix_LoadWAV(file);
+		public override void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
-            if (sound == IntPtr.Zero)
-                throw new AgateException("Could not load audio file.");
-        }
+		private void Dispose(bool disposing)
+		{
+			if (ownRam )
+			{
+				Marshal.FreeHGlobal(soundPtr);
+			}
 
-        public override double Volume
-        {
-            get
-            {
-                return mVolume;
-            }
-            set
-            {
-                if (value < 0.0) mVolume = 0.0;
-                else if (value > 1.0) mVolume = 1.0;
-                else mVolume = value;
-            }
-        }
+			SdlMixer.Mix_FreeChunk(sound);
+			//if (string.IsNullOrEmpty(tempfile) == false)
+			//{
+			//    File.Delete(tempfile);
+			//    tempfile = "";
+			//}
+		}
+		private void LoadFromFile(string file)
+		{
+			sound = SdlMixer.Mix_LoadWAV(file);
 
-        internal IntPtr SoundChunk
-        {
-            get { return sound; }
-        }
+			if (sound == IntPtr.Zero)
+				throw new AgateException("Could not load audio file.");
+		}
 
-    }
+		public override double Volume
+		{
+			get
+			{
+				return mVolume;
+			}
+			set
+			{
+				if (value < 0.0) mVolume = 0.0;
+				else if (value > 1.0) mVolume = 1.0;
+				else mVolume = value;
+			}
+		}
+
+		public override bool Loop
+		{
+			get;
+			set;
+		}
+		internal IntPtr SoundChunk
+		{
+			get { return sound; }
+		}
+
+	}
 }
