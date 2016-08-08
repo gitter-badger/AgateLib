@@ -38,6 +38,7 @@ namespace AgateLib
 		/// <param name="filename">The path and filename of the file to read from.</param>
 		/// <returns></returns>
 		Task<Stream> OpenReadAsync(string filename);
+
 		/// <summary>
 		/// Checks to if the specified file exists in the file provider.
 		/// </summary>
@@ -50,6 +51,7 @@ namespace AgateLib
 		/// </summary>
 		/// <returns></returns>
 		IEnumerable<string> GetAllFiles();
+
 		/// <summary>
 		/// Enumerates through all filenames which match the specified search pattern.
 		/// </summary>
@@ -59,6 +61,7 @@ namespace AgateLib
 		/// <param name="searchPattern"></param>
 		/// <returns></returns>
 		IEnumerable<string> GetAllFiles(string searchPattern);
+
 		/// <summary>
 		/// Returns a string containing the entire contents of the specified file.
 		/// </summary>

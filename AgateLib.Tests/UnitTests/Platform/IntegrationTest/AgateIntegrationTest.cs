@@ -26,11 +26,14 @@ namespace AgateLib.UnitTests.Platform.IntegrationTest
             IntegrationTestPlatform.Initialize(parameters, appDirPath);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void ReadTextFile()
         {
+	        dynamic provider = Assets.AssetProvider;
+	        Assert.AreEqual<string>(appDirPath, provider.SearchPath);
+			
             string filePath = Path.Combine(appDirPath, "hello.txt");
-            string text = "This is a test.";
+            string text = "This is a test." + DateTime.Now;
 
             File.WriteAllText(filePath, text);
 
